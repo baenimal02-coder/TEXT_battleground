@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>기계연 배틀그라운드 v1.31</title>
+    <title>기계연 배틀그라운드 v1.40</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #0f172a; color: #f1f5f9; font-family: 'Courier New', Courier, monospace; touch-action: manipulation; margin: 0; overflow: hidden; height: 100dvh; }
         .grid-map { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(5, 1fr); gap: 4px; height: 100%; width: 100%; }
         .sector { border: 1px solid #1e293b; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; border-radius: 4px; background: #1e293b; color: #475569; position: relative; }
-        .closed { background-color: #450a0a !important; border-color: #7f1d1d !important; color: #f87171 !important; opacity: 0.8; }
+        .closed { background-color: #450a0a !important; border-color: #ef4444 !important; color: #ef4444 !important; opacity: 0.8; }
         .is-me { border-color: #ef4444 !important; color: #fff !important; background-color: #064e3b !important; z-index: 10; }
         .is-me::after { content: '●'; color: #ef4444; position: absolute; top: 2px; right: 4px; animation: blink 0.8s infinite; font-size: 14px; text-shadow: 0 0 5px #ef4444; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
@@ -19,14 +19,14 @@
         .modal { position: fixed; inset: 0; background-color: rgba(0,0,0,0.98); z-index: 1000; display: flex; flex-direction: column; padding: 1.5rem; }
     </style>
 </head>
-<body class="flex flex-col max-w-lg mx-auto">
+<body class="flex flex-col max-w-lg mx-auto overflow-hidden">
 
     <div id="lobbyScreen" class="fixed inset-0 bg-slate-900 z-[2000] flex flex-col items-center justify-center p-6 text-center text-white">
         <h1 class="text-3xl font-black text-amber-500 italic mb-1 uppercase tracking-widest">기계연 배틀그라운드</h1>
-        <p class="text-emerald-500 font-bold text-[10px] mb-10 tracking-[0.3em] uppercase">Build v1.31 Test Edition</p>
+        <p class="text-emerald-500 font-bold text-[10px] mb-10 tracking-[0.3em] uppercase">Build v1.40 Stable</p>
         <div id="loginBox" class="w-full max-w-xs space-y-4">
-            <input id="nickInput" type="text" placeholder="닉네임 입력" class="w-full bg-slate-800 border-2 border-slate-700 p-4 rounded-xl text-center text-white outline-none">
-            <button onclick="joinLobby()" class="w-full bg-amber-600 py-4 rounded-xl font-black text-white text-lg active:scale-95 transition-all">전장 진입</button>
+            <input id="nickInput" type="text" placeholder="닉네임 입력" class="w-full bg-slate-800 border-2 border-slate-700 p-4 rounded-xl text-center text-white outline-none focus:border-amber-500">
+            <button onclick="joinLobby()" class="w-full bg-amber-600 py-4 rounded-xl font-black text-white text-lg shadow-2xl active:scale-95 transition-all">전장 진입</button>
         </div>
         <div id="waitingBox" class="w-full max-w-xs space-y-4 hidden">
             <div id="playerList" class="bg-slate-800 p-4 rounded-xl border border-slate-700 text-white font-bold space-y-1 mb-4"></div>
@@ -35,9 +35,8 @@
         </div>
     </div>
 
-    <div id="landingScreen" class="fixed inset-0 bg-slate-900 z-[1500] flex flex-col p-6 hidden text-white">
-        <h2 class="text-2xl font-black text-amber-500 mb-1 italic text-center uppercase tracking-widest">LANDING</h2>
-        <p class="text-center text-[10px] text-slate-400 mb-6 font-bold uppercase underline">낙하 지점을 선택하십시오.</p>
+    <div id="landingScreen" class="fixed inset-0 bg-slate-900 z-[1500] flex flex-col p-6 hidden">
+        <h2 class="text-2xl font-black text-amber-500 mb-1 italic text-center uppercase tracking-widest">Landing</h2>
         <div class="flex-1 min-h-0 bg-slate-950 p-2 rounded-xl border border-slate-800">
             <div id="landingGrid" class="grid-map"></div>
         </div>
@@ -45,12 +44,12 @@
 
     <div id="gameScreen" class="flex flex-col h-screen hidden p-2">
         <div class="flex-none mb-2">
-            <h1 class="text-center text-amber-500 font-black text-xs italic mb-1 uppercase tracking-tighter">기계연 배틀그라운드 v1.31</h1>
+            <h1 class="text-center text-amber-500 font-black text-xs italic mb-1 uppercase tracking-tighter">기계연 배틀그라운드 v1.40</h1>
             <div class="grid grid-cols-4 gap-1 bg-slate-800 p-2 rounded-xl border border-slate-700 shadow-lg text-white">
-                <div class="text-center border-r border-slate-700"><p class="text-[7px] text-slate-500 font-bold">HP</p><p id="hpDisp" class="text-xs font-black text-emerald-400">100</p></div>
-                <div class="text-center border-r border-slate-700"><p class="text-[7px] text-slate-500 font-bold">ZONE</p><p id="timerDisp" class="text-xs font-black text-rose-500">60s</p></div>
-                <div class="text-center border-r border-slate-700"><p class="text-[7px] text-slate-500 font-bold">WP</p><p id="wpDisp" class="text-[9px] font-bold text-amber-300 truncate px-1">맨주먹</p></div>
-                <div class="text-center"><p class="text-[7px] text-slate-500 font-bold">AR</p><p id="arDisp" class="text-[9px] font-bold text-blue-300 truncate px-1">없음</p></div>
+                <div class="text-center border-r border-slate-700"><p class="text-[7px] text-slate-500 font-bold uppercase">HP</p><p id="hpDisp" class="text-xs font-black text-emerald-400">100</p></div>
+                <div class="text-center border-r border-slate-700"><p class="text-[7px] text-slate-500 font-bold uppercase">ZONE</p><p id="timerDisp" class="text-xs font-black text-rose-500">60s</p></div>
+                <div class="text-center border-r border-slate-700"><p class="text-[7px] text-slate-500 font-bold uppercase">WEAPON</p><p id="wpDisp" class="text-[9px] font-bold text-amber-300 truncate px-1">맨주먹</p></div>
+                <div class="text-center"><p class="text-[7px] text-slate-500 font-bold uppercase">ARMOR</p><p id="arDisp" class="text-[9px] font-bold text-blue-300 truncate px-1">없음</p></div>
             </div>
         </div>
 
@@ -59,17 +58,16 @@
                 <div id="mapGrid" class="grid-map"></div>
             </div>
             <div id="logWindow" class="h-1/2 bg-black/60 rounded-xl border border-slate-800 p-3 overflow-y-auto text-[11px] leading-relaxed shadow-inner">
-                <p id="deathNotice" class="text-rose-500 font-bold hidden text-center mb-2 animate-pulse underline">전사했습니다. 이제 전장을 관전합니다.</p>
-                <p class="text-slate-500 font-bold uppercase border-b border-slate-800 pb-1 mb-2">[SYSTEM TERMINAL]</p>
+                <p id="deathNotice" class="text-rose-500 font-bold hidden text-center mb-2 animate-pulse underline">전사했습니다. 관전 모드로 전환합니다.</p>
+                <p class="text-slate-500 font-bold uppercase border-b border-slate-800 pb-1 mb-2">[SURVIVAL LOG]</p>
             </div>
         </div>
 
-        <div class="flex-none pb-[env(safe-area-inset-bottom)] mt-2">
-            <button id="adminSkip" onclick="adminSkip()" class="hidden bg-rose-700 w-full py-2 rounded-lg text-[10px] font-black text-white mb-2 uppercase tracking-widest shadow-xl animate-pulse">Skip Timer (Next Zone)</button>
-            
+        <div id="actionPanel" class="flex-none pb-[env(safe-area-inset-bottom)] mt-2">
+            <button id="adminSkip" onclick="adminSkip()" class="hidden bg-rose-700 w-full py-2 rounded-lg text-[10px] font-black text-white mb-2 uppercase tracking-widest animate-pulse">Skip Timer (Admin Only)</button>
             <div class="grid grid-cols-3 gap-2">
-                <button onclick="farmItem()" id="farmBtn" class="bg-amber-600 py-4 rounded-xl font-black text-xs text-white active:bg-amber-500 shadow-lg transition-all">🔍파밍(0/2)</button>
-                <button onclick="showMove()" id="moveBtn" class="bg-slate-700 py-4 rounded-xl font-black text-xs text-white shadow-lg transition-all">🏃이동</button>
+                <button onclick="farmItem()" id="farmBtn" class="bg-amber-600 py-4 rounded-xl font-black text-xs text-white active:bg-amber-500 shadow-lg">🔍파밍(0/2)</button>
+                <button onclick="showMove()" id="moveBtn" class="bg-slate-700 py-4 rounded-xl font-black text-xs text-white active:bg-slate-600 shadow-lg">🏃이동</button>
                 <button onclick="showManual()" class="bg-indigo-600 py-4 rounded-xl font-black text-xs text-white shadow-lg">📖도감</button>
             </div>
         </div>
@@ -77,8 +75,8 @@
 
     <div id="moveModal" class="modal hidden"><div id="moveGrid" class="grid-map h-1/2"></div><button onclick="showMove()" class="mt-auto py-4 bg-slate-800 rounded-xl text-slate-400 font-bold uppercase tracking-widest">Close</button></div>
     <div id="manualModal" class="modal hidden"><div id="manualContent" class="flex-1 overflow-y-auto space-y-4 text-xs pr-2">
-        <div class="bg-slate-800 p-4 rounded-xl border border-slate-700"><p class="font-black text-amber-400 mb-2 border-b border-amber-900 pb-1">🗡️ WEAPONS</p><p>쇠파이프, 소방도끼, 리볼버, 크로스보우, ???(히든)</p></div>
-        <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 mt-2"><p class="font-black text-blue-400 mb-2 border-b border-blue-900 pb-1">🛡️ ARMORS</p><p>경찰(-20%), 군용(-40%), 전술(-60%), ???(히든)</p></div>
+        <div class="bg-slate-800 p-4 rounded-xl border border-slate-700"><p class="font-black text-amber-400 mb-2 border-b border-amber-900 pb-1 uppercase">🗡️ Weapons</p><p>쇠파이프, 소방도끼, 리볼버, 크로스보우, ???(히든)</p></div>
+        <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 mt-2"><p class="font-black text-blue-400 mb-2 border-b border-blue-900 pb-1 uppercase">🛡️ Armors</p><p>경찰(-20%), 군용(-40%), 전술(-60%), ???(히든)</p></div>
     </div><button onclick="showManual()" class="mt-4 py-4 bg-slate-800 rounded-xl font-bold uppercase">Close</button></div>
 
     <script type="module">
@@ -104,18 +102,19 @@
 
         function syncLobby() {
             onValue(ref(db, 'game'), (snap) => {
-                const data = snap.val() || {}; worldData = data.world || { state: 'waiting', timer: 60, closed: [] };
-                const players = data.players || {}; const pArray = Object.values(players);
+                const data = snap.val() || {}; 
+                worldData = data.world || { state: 'waiting', timer: 60, closed: [] };
+                const players = data.players || {};
+                const pArray = Object.values(players);
                 document.getElementById('playerList').innerHTML = pArray.map(p => `<div>${p.name} ${p.ready?'(READY)':''}</div>`).join('');
                 
-                // 시작 조건: 어드민이면 1명이어도 시작 가능, 일반 유저는 2명 이상 & 전원 레디
                 const canStart = isAdmin || (pArray.length >= 2 && pArray.every(p => p.ready));
-                document.getElementById('startMsg').innerText = canStart ? "게임 시작이 가능합니다!" : "다른 플레이어를 기다리는 중...";
+                document.getElementById('startMsg').innerText = canStart ? "게임 시작 가능!" : "플레이어 대기 중...";
 
                 if(worldData.state === 'playing') {
                     document.getElementById('lobbyScreen').classList.add('hidden');
                     if(!myPos) { document.getElementById('landingScreen').classList.remove('hidden'); renderLandingGrid(); }
-                    else { document.getElementById('landingScreen').classList.add('hidden'); document.getElementById('gameScreen').classList.remove('hidden'); updateUI(); }
+                    else { document.getElementById('gameScreen').classList.remove('hidden'); updateUI(); }
                 }
                 if(data.world && data.world.lastEvent && data.world.lastEvent.id !== lastEventId) {
                     const ev = data.world.lastEvent; lastEventId = ev.id;
@@ -125,20 +124,21 @@
         }
 
         window.toggleReady = () => {
-            const playersRef = ref(db, 'game/players');
-            // 어드민이 버튼 누르면 즉시 게임 시작 (1인 플레이 가능)
-            if(isAdmin) set(ref(db, 'game/world'), { state: 'playing', timer: 60, closed: [], lastEvent: {id: Date.now(), msg: '전투가 시작되었습니다!'} });
-            else { isReady=!isReady; update(ref(db, `game/players/${myId}`), {ready:isReady}); }
+            if(isAdmin) {
+                // 게임 시작 시 closed 배열을 확실하게 비움 (Bug 1 수정)
+                set(ref(db, 'game/world'), { state: 'playing', timer: 60, closed: [], lastEvent: {id: Date.now(), msg: '전투가 시작되었습니다!'} });
+            } else { isReady=!isReady; update(ref(db, `game/players/${myId}`), {ready:isReady}); }
         };
 
-        window.adminSkip = () => { if(isAdmin) closeSectors(); }; // 어드민 전용 시간 워프
+        window.adminSkip = () => { if(isAdmin) closeSectors(); };
 
         function closeSectors() {
             const all = []; for(let i=0; i<5; i++) for(let j=0; j<5; j++) all.push(String.fromCharCode(65+i)+(j+1));
-            const closedArr = worldData.closed || []; const avail = all.filter(s => !closedArr.includes(s));
+            const currentClosed = worldData.closed || [];
+            const avail = all.filter(s => !currentClosed.includes(s));
             if(avail.length <= 1) return;
             const toClose = []; for(let i=0; i<2; i++) { if(avail.length>0) toClose.push(avail.splice(Math.floor(Math.random()*avail.length), 1)[0]); }
-            update(ref(db, 'game/world'), { closed: [...closedArr, ...toClose], timer: 60, lastEvent: {id: Date.now(), msg: '자기장이 급격히 수축합니다!'} });
+            update(ref(db, 'game/world'), { closed: [...currentClosed, ...toClose], timer: 60, lastEvent: {id: Date.now(), msg: '자기장이 좁혀졌습니다!'} });
         }
 
         function updateUI() {
@@ -151,7 +151,7 @@
             const mGrid = document.getElementById('moveGrid'); mGrid.innerHTML = '';
             const closedArr = worldData.closed || [];
             for(let r=0; r<5; r++) { for(let c=0; c<5; c++) {
-                const row = String.fromCharCode(65+r); const addr = `${row}-${c+1}`; const addrKey = `${row}${c+1}`;
+                const row = String.fromCharCode(65+r); const col = (c+1); const addr = `${row}-${col}`; const addrKey = `${row}${col}`;
                 const isMe = (myPos && myPos.r===r && myPos.c===c); const isClosed = closedArr.includes(addrKey);
                 const d = document.createElement('div'); d.className = `sector ${isClosed?'closed':''} ${isMe?'is-me':''}`;
                 d.innerText = addr; grid.appendChild(d);
@@ -162,23 +162,56 @@
             checkRedZoneStatus(closedArr);
         }
 
-        function checkRedZoneStatus(closed) {
-            if(!myPos || isDead) return;
-            const myAddrKey = `${String.fromCharCode(65+myPos.r)}${myPos.c+1}`;
-            if (closed.includes(myAddrKey) && !redZoneWarningTimer) {
-                addLog("[위험] 구역 폐쇄! 30초 내 탈출하십시오.", "text-rose-500 font-bold underline");
-                redZoneCounter = 30;
-                redZoneWarningTimer = setInterval(() => {
-                    redZoneCounter--;
-                    if ([20, 10, 5, 4, 3, 2, 1].includes(redZoneCounter)) addLog(`[경고] ${redZoneCounter}초 후 구역 소멸!`, "text-rose-400 font-bold");
-                    if (redZoneCounter <= 0) playerDeath();
-                }, 1000);
-            } else if (!closed.includes(myAddrKey) && redZoneWarningTimer) {
-                addLog("[안전] 탈출 성공.", "text-emerald-400");
-                clearInterval(redZoneWarningTimer); redZoneWarningTimer = null;
+        function triggerRandomEvent() {
+            if (isDead) return;
+            const rand = Math.random();
+            if (rand < 0.25) { // 25% 확률로 돌발 이벤트 (Bug 3 반영)
+                const events = [
+                    { msg: "발을 헛디뎌 넘어졌습니다. (-5 HP)", hp: -5, clr: "text-rose-400" },
+                    { msg: "날카로운 유리 파편을 밟았습니다! (-10 HP)", hp: -10, clr: "text-rose-600" },
+                    { msg: "버려진 초코바를 발견해 허기를 채웁니다. (+5 HP)", hp: 5, clr: "text-emerald-400" },
+                    { msg: "누군가 남긴 깨끗한 물을 마셨습니다. (+10 HP)", hp: 10, clr: "text-emerald-500" }
+                ];
+                const e = events[Math.floor(Math.random() * events.length)];
+                myHP = Math.max(0, Math.min(100, myHP + e.hp));
+                addLog(`[이벤트] ${e.msg}`, e.clr);
+                if (myHP <= 0) playerDeath();
+                updateUI();
             }
         }
 
+        window.moveTo = (r, c, ak, a) => {
+            if(isDead) return; myPos = { r, c }; farmCount = 0;
+            update(ref(db, `game/players/${myId}`), { pos: myPos });
+            document.getElementById('moveModal').classList.add('hidden');
+            addLog(`--- ${a} 이동 완료 ---`, "text-white font-bold py-1 my-1 border-y border-slate-800");
+            triggerRandomEvent(); // 이동 시 이벤트 발생
+            updateUI();
+        };
+
+        window.farmItem = () => {
+            if(isDead || farmCount >= 2) return; farmCount++; updateUI(); addLog(`수색 중... (${farmCount}/2)`, "text-amber-500 animate-pulse");
+            setTimeout(() => {
+                const rand = Math.random();
+                if(rand < 0.03) {
+                    const hidden = ["AWM(히든)", "길리슈트(히든)"]; const res = hidden[Math.floor(Math.random()*hidden.length)];
+                    if(res.includes("슈트")) myArmor = res; else myWeapon = res;
+                    update(ref(db, 'game/world/lastEvent'), { id: Date.now(), type: 'item', msg: `${myName}님이 히든 아이템 [${res}]를 발견했습니다!` });
+                } else if(rand < 0.4) addLog("아무것도 찾지 못했습니다.");
+                else if(rand < 0.7) { 
+                    addLog("붕대 발견! 체력을 회복합니다. (+15 HP)", "text-emerald-400 font-bold"); 
+                    myHP = Math.min(100, myHP + 15); // Bug 2 수정
+                } else {
+                    const items = ["리볼버", "소방 도끼", "경찰 조끼 (Lv.1)", "크로스보우", "군용 조끼 (Lv.2)"];
+                    const res = items[Math.floor(Math.random()*items.length)];
+                    if(res.includes("조끼")) myArmor = res; else myWeapon = res;
+                    addLog(`[${res}] 획득! 장착했습니다.`, "text-sky-400 font-black");
+                }
+                updateUI();
+            }, 600);
+        };
+
+        // 기타 헬퍼 로직... (Landing 렌더링, 로그 추가, 레드존 체크, 타이머 동일)
         window.renderLandingGrid = () => {
             const grid = document.getElementById('landingGrid'); grid.innerHTML = '';
             for(let r=0; r<5; r++) { for(let c=0; c<5; c++) {
@@ -189,37 +222,26 @@
             } }
         };
 
-        window.farmItem = () => {
-            if(isDead || farmCount >= 2) return; farmCount++; updateUI(); addLog(`수색 중... (${farmCount}/2)`, "text-amber-500 animate-pulse");
-            setTimeout(() => {
-                const rand = Math.random();
-                if(rand < 0.03) {
-                    const h = ["AWM(히든)", "길리슈트(히든)"]; const res = h[Math.floor(Math.random()*h.length)];
-                    if(res.includes("슈트")) myArmor = res; else myWeapon = res;
-                    update(ref(db, 'game/world/lastEvent'), { id: Date.now(), type: 'item', msg: `${myName}님이 히든 아이템 [${res}]를 획득했습니다!` });
-                } else if(rand < 0.4) addLog("아무것도 찾지 못했습니다.");
-                else if(rand < 0.7) { addLog("붕대 발견! (+15 HP)", "text-emerald-400 font-bold"); myHP = Math.min(100, myHP + 15); }
-                else {
-                    const i = ["리볼버", "소방 도끼", "경찰 조끼 (Lv.1)", "크로스보우", "군용 조끼 (Lv.2)"];
-                    const res = i[Math.floor(Math.random()*i.length)];
-                    if(res.includes("조끼")) myArmor = res; else myWeapon = res;
-                    addLog(`[${res}] 획득!`, "text-sky-400 font-black");
-                }
-                updateUI();
-            }, 600);
-        };
-
-        window.moveTo = (r, c, ak, a) => {
-            if(isDead) return; myPos = { r, c }; farmCount = 0;
-            update(ref(db, `game/players/${myId}`), { pos: myPos });
-            document.getElementById('moveModal').classList.add('hidden');
-            addLog(`--- ${a} 이동 완료 ---`, "text-white font-bold py-1 my-1 border-y border-slate-800"); updateUI();
-        };
+        function checkRedZoneStatus(closed) {
+            if(!myPos || isDead || isAdmin) return;
+            const myAddrKey = `${String.fromCharCode(65+myPos.r)}${myPos.c+1}`;
+            if (closed.includes(myAddrKey) && !redZoneWarningTimer) {
+                addLog("[위험] 구역 폐쇄! 30초 내 탈출하십시오.", "text-rose-500 font-bold underline");
+                redZoneCounter = 30;
+                redZoneWarningTimer = setInterval(() => {
+                    redZoneCounter--;
+                    if ([20, 10, 5, 4, 3, 2, 1].includes(redZoneCounter)) addLog(`[경고] ${redZoneCounter}초 후 구역 소멸!`, "text-rose-400 font-bold");
+                    if (redZoneCounter <= 0) playerDeath();
+                }, 1000);
+            } else if (!closed.includes(myAddrKey) && redZoneWarningTimer) {
+                addLog("[안전] 안전 구역 진입.", "text-emerald-400");
+                clearInterval(redZoneWarningTimer); redZoneWarningTimer = null;
+            }
+        }
 
         function playerDeath() {
             isDead = true; myHP = 0; clearInterval(redZoneWarningTimer);
-            const addr = `${String.fromCharCode(65+myPos.r)}-${myPos.c+1}`;
-            update(ref(db, 'game/world/lastEvent'), { id: Date.now(), type: 'death', msg: `${myName}님이 ${addr} 구역에서 소멸했습니다.` });
+            update(ref(db, 'game/world/lastEvent'), { id: Date.now(), type: 'death', msg: `${myName}님이 레드존 탈출 실패로 소멸했습니다.` });
             document.getElementById('deathNotice').classList.remove('hidden');
             document.getElementById('farmBtn').disabled = true; document.getElementById('moveBtn').disabled = true;
             updateUI();
@@ -229,12 +251,10 @@
         window.showMove = () => { if(!isDead) document.getElementById('moveModal').classList.toggle('hidden'); };
         window.showManual = () => document.getElementById('manualModal').classList.toggle('hidden');
 
-        setInterval(() => { if(worldData.state === 'playing') {
+        setInterval(() => { if(isAdmin && worldData.state === 'playing') {
             const cur = worldData.timer || 60;
-            if(isAdmin) { // 어드민 브라우저만 시계를 돌림
-                if(cur > 0) update(ref(db, 'game/world'), {timer: cur - 1});
-                else closeSectors();
-            }
+            if(cur > 0) update(ref(db, 'game/world'), {timer: cur - 1});
+            else closeSectors();
         }}, 1000);
     </script>
 </body>
