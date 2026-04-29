@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>기계연 배틀그라운드 v1.20</title>
+    <title>기계연 배틀그라운드 v1.22</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #0f172a; color: #f1f5f9; font-family: 'Courier New', Courier, monospace; touch-action: manipulation; margin: 0; overflow: hidden; height: 100dvh; }
@@ -21,22 +21,23 @@
 </head>
 <body class="flex flex-col max-w-lg mx-auto overflow-hidden">
 
-    <div id="lobbyScreen" class="fixed inset-0 bg-slate-900 z-[2000] flex flex-col items-center justify-center p-6 text-center">
+    <div id="lobbyScreen" class="fixed inset-0 bg-slate-900 z-[2000] flex flex-col items-center justify-center p-6 text-center text-white">
         <h1 class="text-3xl font-black text-amber-500 italic mb-1 uppercase tracking-widest">기계연 배틀그라운드</h1>
-        <p class="text-rose-500 font-bold text-[10px] mb-10 tracking-[0.3em] uppercase">Build v1.20 Full Integration</p>
+        <p class="text-rose-500 font-bold text-[10px] mb-10 tracking-[0.3em] uppercase">Build v1.22 Stabilization</p>
         <div id="loginBox" class="w-full max-w-xs space-y-4">
             <input id="nickInput" type="text" placeholder="닉네임 입력" class="w-full bg-slate-800 border-2 border-slate-700 p-4 rounded-xl text-center text-white outline-none">
-            <button onclick="joinLobby()" class="w-full bg-amber-600 py-4 rounded-xl font-black text-white text-lg shadow-2xl">전장 진입</button>
+            <button onclick="joinLobby()" class="w-full bg-amber-600 py-4 rounded-xl font-black text-white text-lg active:scale-95 transition-all">전장 진입</button>
         </div>
         <div id="waitingBox" class="w-full max-w-xs space-y-4 hidden">
-            <div id="playerList" class="bg-slate-800 p-4 rounded-xl border border-slate-700 text-white font-bold space-y-1 mb-4"></div>
-            <button id="readyBtn" onclick="toggleReady()" class="w-full bg-emerald-600 py-4 rounded-xl font-black text-white text-lg">READY</button>
+            <div id="playerList" class="bg-slate-800 p-4 rounded-xl border border-slate-700 text-white font-bold space-y-1 mb-4 text-center"></div>
+            <button id="readyBtn" onclick="toggleReady()" class="w-full bg-emerald-600 py-4 rounded-xl font-black text-white text-lg shadow-xl">READY</button>
             <p id="startMsg" class="text-xs text-rose-400 font-bold mt-4"></p>
+            <button id="adminStartBtn" onclick="startGame()" class="hidden w-full bg-rose-600 py-3 rounded-xl font-black text-white mt-2">ADMIN: FORCE START</button>
         </div>
     </div>
 
     <div id="landingScreen" class="fixed inset-0 bg-slate-900 z-[1500] flex flex-col p-6 hidden">
-        <h2 class="text-2xl font-black text-amber-500 mb-1 italic text-center uppercase tracking-widest">Landing</h2>
+        <h2 class="text-2xl font-black text-amber-500 mb-2 italic text-center uppercase tracking-widest">Landing Selection</h2>
         <p class="text-center text-[10px] text-slate-400 mb-6 font-bold uppercase underline decoration-amber-900">낙하할 구역을 선택하십시오.</p>
         <div class="flex-1 min-h-0 bg-slate-950 p-2 rounded-xl border border-slate-800">
             <div id="landingGrid" class="grid-map"></div>
@@ -45,12 +46,12 @@
 
     <div id="gameScreen" class="flex flex-col h-full hidden p-2">
         <div class="flex-none mb-2">
-            <h1 class="text-center text-amber-500 font-black text-xs italic mb-1 uppercase tracking-tighter">기계연 배틀그라운드 v1.20</h1>
-            <div class="grid grid-cols-4 gap-1 bg-slate-800 p-2 rounded-xl border border-slate-700 shadow-lg">
+            <h1 class="text-center text-amber-500 font-black text-sm italic mb-1 uppercase tracking-tighter">기계연 배틀그라운드 v1.22</h1>
+            <div class="grid grid-cols-4 gap-1 bg-slate-800 p-2 rounded-xl border border-slate-700 shadow-lg text-white">
                 <div class="text-center border-r border-slate-700"><p class="text-[7px] text-slate-500 font-bold uppercase">HP</p><p id="hpDisp" class="text-xs font-black text-emerald-400">100</p></div>
                 <div class="text-center border-r border-slate-700"><p class="text-[7px] text-slate-500 font-bold uppercase">ZONE</p><p id="timerDisp" class="text-xs font-black text-rose-500">60s</p></div>
-                <div class="text-center border-r border-slate-700"><p class="text-[7px] text-slate-500 font-bold uppercase">WEAPON</p><p id="wpDisp" class="text-[9px] font-bold text-amber-300 truncate px-1">맨주먹</p></div>
-                <div class="text-center"><p class="text-[7px] text-slate-500 font-bold uppercase">ARMOR</p><p id="arDisp" class="text-[9px] font-bold text-blue-300 truncate px-1">없음</p></div>
+                <div class="text-center border-r border-slate-700"><p class="text-[7px] text-slate-500 font-bold uppercase">WEAPON</p><p id="wpDisp" class="text-[9px] font-bold text-amber-300 truncate">맨주먹</p></div>
+                <div class="text-center"><p class="text-[7px] text-slate-500 font-bold uppercase">ARMOR</p><p id="arDisp" class="text-[9px] font-bold text-blue-300 truncate">없음</p></div>
             </div>
         </div>
 
@@ -59,55 +60,30 @@
                 <div id="mapGrid" class="grid-map"></div>
             </div>
             <div id="logWindow" class="h-1/2 bg-black/60 rounded-xl border border-slate-800 p-3 overflow-y-auto text-[11px] leading-relaxed shadow-inner">
-                <p id="deathNotice" class="text-rose-500 font-bold hidden text-center mb-2 animate-pulse underline">전사했습니다. 이제 전장을 관전합니다.</p>
-                <p class="text-slate-500 font-bold uppercase border-b border-slate-800 pb-1 mb-2">[SYSTEM TERMINAL]</p>
+                <p id="deathNotice" class="text-rose-500 font-bold hidden text-center mb-2 animate-pulse underline">전사했습니다. 관전 모드로 전환합니다.</p>
+                <p class="text-slate-500 font-bold uppercase border-b border-slate-800 pb-1 mb-2">[SURVIVAL LOG]</p>
             </div>
         </div>
 
         <div id="actionPanel" class="flex-none pb-[env(safe-area-inset-bottom)]">
             <div class="grid grid-cols-3 gap-2 flex-none mt-2 mb-1">
-                <button onclick="farmItem()" id="farmBtn" class="bg-amber-600 py-4 rounded-xl font-black text-xs text-white active:bg-amber-500 shadow-lg transition-all">🔍파밍(0/2)</button>
-                <button onclick="showMove()" id="moveBtn" class="bg-slate-700 py-4 rounded-xl font-black text-xs text-white shadow-lg transition-all">🏃이동</button>
+                <button onclick="farmItem()" id="farmBtn" class="bg-amber-600 py-4 rounded-xl font-black text-xs text-white active:bg-amber-500 shadow-lg">🔍파밍(0/2)</button>
+                <button onclick="showMove()" id="moveBtn" class="bg-slate-700 py-4 rounded-xl font-black text-xs text-white shadow-lg">🏃이동</button>
                 <button onclick="showManual()" class="bg-indigo-600 py-4 rounded-xl font-black text-xs text-white shadow-lg">📖도감</button>
             </div>
-            <button id="adminSkip" onclick="adminSkip()" class="hidden bg-rose-950 w-full py-2 rounded text-[9px] font-black text-white mb-1 uppercase tracking-widest shadow-xl">Admin: Next Phase</button>
+            <button id="adminSkip" onclick="adminSkip()" class="hidden bg-rose-900 w-full py-2 rounded text-[9px] font-black text-white mb-1 uppercase tracking-widest shadow-xl">Admin: Next Phase</button>
         </div>
     </div>
 
-    <div id="moveModal" class="modal hidden">
-        <h2 class="text-center text-white font-black mb-6 uppercase italic border-b border-slate-800 pb-2">Target Sector</h2>
-        <div id="moveGrid" class="grid-map h-1/2"></div>
-        <button onclick="showMove()" class="mt-auto py-4 bg-slate-800 rounded-xl text-slate-400 font-bold uppercase tracking-widest">Close</button>
-    </div>
-
-    <div id="manualModal" class="modal hidden">
-        <h2 class="text-xl font-black text-indigo-400 mb-6 italic text-center uppercase border-b border-indigo-900 pb-2 tracking-widest">Manual</h2>
-        <div id="manualContent" class="flex-1 overflow-y-auto space-y-4 text-xs pr-2">
-            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
-                <p class="font-black text-amber-400 mb-3 border-b border-amber-900 pb-1">🗡️ WEAPONS</p>
-                <div class="space-y-1 text-slate-300">
-                    <p>• 쇠파이프 (DMG: 15 / DUR: 10)</p><p>• 소방 도끼 (DMG: 25 / DUR: 7)</p><p>• 리볼버 권총 (DMG: 55 / DUR: 6)</p><p>• 크로스보우 (DMG: 45 / DUR: 3)</p><p class="text-amber-600 font-bold">• [???] (에어드랍 한정)</p>
-                </div>
-            </div>
-            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
-                <p class="font-black text-blue-400 mb-3 border-b border-blue-900 pb-1">🛡️ ARMORS</p>
-                <div class="space-y-1 text-slate-300">
-                    <p>• 경찰 조끼 (-20% 피해 감소)</p><p>• 군용 조끼 (-40% 피해 감소)</p><p>• 전술 조끼 (-60% 피해 감소)</p><p class="text-blue-600 font-bold">• [???] (히든 방어구)</p>
-                </div>
-            </div>
-            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
-                <p class="font-black text-rose-400 mb-3 border-b border-rose-900 pb-1">💊 CONSUMABLES</p>
-                <div class="space-y-1 text-slate-300">
-                    <p>• 붕대 (+15 HP)</p><p>• 구급상자 (HP 80 고정)</p><p>• 에너지 드링크 (+10 / 도주UP)</p>
-                </div>
-            </div>
-        </div>
-        <button onclick="showManual()" class="mt-6 py-4 bg-slate-800 rounded-xl font-bold uppercase tracking-widest">Close</button>
-    </div>
+    <div id="moveModal" class="modal hidden"><div id="moveGrid" class="grid-map h-1/2"></div><button onclick="showMove()" class="mt-auto py-4 bg-slate-800 rounded-xl text-slate-400 font-bold uppercase">Close</button></div>
+    <div id="manualModal" class="modal hidden"><div id="manualContent" class="flex-1 overflow-y-auto space-y-4 text-xs pr-2">
+        <div class="bg-slate-800 p-4 rounded-xl border border-slate-700"><p class="font-black text-amber-400 mb-2 border-b border-amber-900 pb-1 uppercase">🗡️ Weapons</p><p>쇠파이프, 소방도끼, 리볼버, 크로스보우, ???(히든)</p></div>
+        <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 mt-2"><p class="font-black text-blue-400 mb-2 border-b border-blue-900 pb-1 uppercase">🛡️ Armors</p><p>경찰(-20%), 군용(-40%), 전술(-60%), ???(히든)</p></div>
+    </div><button onclick="showManual()" class="mt-4 py-4 bg-slate-800 rounded-xl font-bold uppercase">Close</button></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-        import { getDatabase, ref, onValue, set, update, onDisconnect } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+        import { getDatabase, ref, onValue, set, update, onDisconnect, remove } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 
         const firebaseConfig = { apiKey: "AIzaSyBjqzM3ScDSoINSMiCukjFG6z7MBjinI1M", authDomain: "nextgenband.firebaseapp.com", databaseURL: "https://nextgenband-default-rtdb.firebaseio.com", projectId: "nextgenband", storageBucket: "nextgenband.firebasestorage.app", messagingSenderId: "251453757830", appId: "1:251453757830:web:201c7945ef0eba901db407" };
         const app = initializeApp(firebaseConfig);
@@ -115,40 +91,75 @@
 
         let myId, myName, isAdmin, isReady = false, myPos = null, myHP = 100, myWeapon = "맨주먹", myArmor = "없음", farmCount = 0;
         let worldData = { state: 'waiting', timer: 60, closed: [] };
-        let isDead = false, redZoneWarningTimer = null, redZoneCounter = 30;
+        let isDead = false, redZoneWarningTimer = null, redZoneCounter = 30, lastEventId = null;
 
         window.joinLobby = () => {
             myName = document.getElementById('nickInput').value.trim(); if(!myName) return;
             myId = "U_" + Math.random().toString(36).substring(2, 7); isAdmin = (myName === "admin");
             document.getElementById('loginBox').classList.add('hidden'); document.getElementById('waitingBox').classList.remove('hidden');
-            if(isAdmin) document.getElementById('adminSkip').classList.remove('hidden');
+            if(isAdmin) {
+                document.getElementById('adminSkip').classList.remove('hidden');
+                document.getElementById('adminStartBtn').classList.remove('hidden');
+            }
             set(ref(db, `game/players/${myId}`), { id: myId, name: myName, ready: false, hp: 100 });
             onDisconnect(ref(db, `game/players/${myId}`)).remove(); syncLobby();
         };
 
         function syncLobby() {
             onValue(ref(db, 'game'), (snap) => {
-                const data = snap.val() || {}; worldData = data.world || { state: 'waiting', timer: 60, closed: [] };
+                const data = snap.val() || {}; 
+                worldData = data.world || { state: 'waiting', timer: 60, closed: [] };
                 const players = data.players || {};
-                document.getElementById('playerList').innerHTML = Object.values(players).map(p => `<div>${p.ready?'✅':'⏳'} ${p.name}</div>`).join('');
-                if(Object.values(players).length >= (isAdmin?1:2) && Object.values(players).every(p=>p.ready) && worldData.state==='waiting') {
-                    if(isAdmin) setTimeout(()=>update(ref(db, 'game/world'), {state:'playing', timer:60, closed:[]}), 1000);
+                
+                // 대기실 인원 표시
+                const pArray = Object.values(players);
+                document.getElementById('playerList').innerHTML = pArray.map(p => `<div>${p.ready?'✅':'⏳'} ${p.name}</div>`).join('');
+                
+                // 시작 조건 체크 (일반 유저 2인 이상 + 전원 레디)
+                const allReady = pArray.length >= 2 && pArray.every(p => p.ready);
+                if(allReady && worldData.state === 'waiting') {
+                    document.getElementById('startMsg').innerText = "전원 준비 완료! 관리자가 게임을 시작합니다.";
+                    if(isAdmin) startGame(); // 관리자 있을 때만 자동 시작 가능 혹은 수동
+                } else if(pArray.length < 2) {
+                    document.getElementById('startMsg').innerText = "최소 2명의 플레이어가 필요합니다.";
+                } else {
+                    document.getElementById('startMsg').innerText = "모든 플레이어가 READY를 눌러야 합니다.";
                 }
+
+                // 게임 진행 상태 동기화
                 if(worldData.state === 'playing') {
                     document.getElementById('lobbyScreen').classList.add('hidden');
                     if(!myPos) { document.getElementById('landingScreen').classList.remove('hidden'); renderLandingGrid(); }
                     else { document.getElementById('landingScreen').classList.add('hidden'); document.getElementById('gameScreen').classList.remove('hidden'); updateUI(); }
                 }
+
+                // 월드 이벤트 수신
+                if(data.world && data.world.lastEvent && data.world.lastEvent.id !== lastEventId) {
+                    const ev = data.world.lastEvent; lastEventId = ev.id;
+                    addLog(`[월드] ${ev.msg}`, ev.type === 'death' ? 'text-rose-500 font-bold' : 'text-amber-400 font-black');
+                }
             });
         }
+
+        window.startGame = () => {
+            if(!isAdmin) return;
+            // 게임 시작 시 월드 데이터 초기화 (버그 수정 핵심)
+            set(ref(db, 'game/world'), { state: 'playing', timer: 60, closed: [], lastEvent: {id: 0, msg: '전투가 시작되었습니다!'} });
+        };
 
         function renderLandingGrid() {
             const grid = document.getElementById('landingGrid'); grid.innerHTML = '';
             for(let r=0; r<5; r++) {
                 for(let c=0; c<5; c++) {
-                    const row = String.fromCharCode(65+r); const addr = `${row}-${c+1}`;
-                    const b = document.createElement('button'); b.className = "sector bg-slate-800 border border-slate-700 text-slate-500 hover:bg-emerald-900 hover:text-white";
-                    b.innerText = addr; b.onclick = () => { myPos = { r, c }; update(ref(db, `game/players/${myId}`), { pos: myPos }); addLog(`${addr} 구역에 강하했습니다.`, "text-emerald-400 font-bold"); };
+                    const addr = `${String.fromCharCode(65+r)}-${c+1}`;
+                    const b = document.createElement('button');
+                    b.className = "sector bg-slate-800 border border-slate-700 text-slate-500 hover:bg-emerald-900 hover:text-white transition-all";
+                    b.innerText = addr;
+                    b.onclick = () => {
+                        myPos = { r, c };
+                        update(ref(db, `game/players/${myId}`), { pos: myPos });
+                        addLog(`${addr} 구역에 성공적으로 낙하했습니다.`, "text-emerald-400 font-bold");
+                    };
                     grid.appendChild(b);
                 }
             }
@@ -159,11 +170,11 @@
 
         function closeSectors() {
             const all = []; for(let i=0; i<5; i++) for(let j=0; j<5; j++) all.push(String.fromCharCode(65+i)+(j+1));
-            const closedArr = worldData.closed || [];
-            const avail = all.filter(s => !closedArr.includes(s));
+            const currentClosed = worldData.closed || [];
+            const avail = all.filter(s => !currentClosed.includes(s));
             if(avail.length <= 1) return;
             const toClose = []; for(let i=0; i<2; i++) { if(avail.length>0) toClose.push(avail.splice(Math.floor(Math.random()*avail.length), 1)[0]); }
-            update(ref(db, 'game/world'), { closed: [...closedArr, ...toClose], timer: 60 });
+            update(ref(db, 'game/world'), { closed: [...currentClosed, ...toClose], timer: 60 });
         }
 
         function updateUI() {
@@ -172,22 +183,18 @@
             document.getElementById('wpDisp').innerText = myWeapon;
             document.getElementById('arDisp').innerText = myArmor;
             document.getElementById('farmBtn').innerText = `🔍파밍(${farmCount}/2)`;
-
             const grid = document.getElementById('mapGrid'); grid.innerHTML = '';
             const mGrid = document.getElementById('moveGrid'); mGrid.innerHTML = '';
             const closedArr = worldData.closed || [];
-
             for(let r=0; r<5; r++) {
                 for(let c=0; c<5; c++) {
                     const row = String.fromCharCode(65+r); const col = (c+1);
                     const addr = `${row}-${col}`; const addrKey = `${row}${col}`;
                     const isMe = (myPos && myPos.r===r && myPos.c===c);
                     const isClosed = closedArr.includes(addrKey);
-                    
                     const d = document.createElement('div'); d.className = `sector ${isClosed?'closed':''} ${isMe?'is-me':''}`;
                     d.innerText = addr; grid.appendChild(d);
-
-                    const b = document.createElement('button'); b.className = `sector ${isClosed?'closed opacity-20':'hover:bg-emerald-800'}`;
+                    const b = document.createElement('button'); b.className = `sector ${isClosed?'closed opacity-20':'hover:bg-emerald-700'}`;
                     b.innerText = addr; if(!isClosed && !isDead) b.onclick = () => moveTo(r, c, addrKey, addr);
                     mGrid.appendChild(b);
                 }
@@ -198,17 +205,15 @@
         function checkRedZoneStatus(closed) {
             if(!myPos || isDead) return;
             const myAddrKey = `${String.fromCharCode(65+myPos.r)}${myPos.c+1}`;
-            const inRedZone = closed.includes(myAddrKey);
-            if (inRedZone && !redZoneWarningTimer) {
+            if (closed.includes(myAddrKey) && !redZoneWarningTimer) {
                 addLog("[위험] 구역 폐쇄! 30초 내로 탈출하십시오.", "text-rose-500 font-bold underline");
                 redZoneCounter = 30;
                 redZoneWarningTimer = setInterval(() => {
                     redZoneCounter--;
-                    const notify = [20, 10, 5, 4, 3, 2, 1];
-                    if (notify.includes(redZoneCounter)) addLog(`[경고] ${redZoneCounter}초 후 구역 소멸!`, redZoneCounter <= 5 ? "text-rose-600 font-black animate-pulse" : "text-rose-400");
+                    if ([20, 10, 5, 4, 3, 2, 1].includes(redZoneCounter)) addLog(`[경고] ${redZoneCounter}초 후 구역 소멸!`, "text-rose-400 font-bold");
                     if (redZoneCounter <= 0) playerDeath();
                 }, 1000);
-            } else if (!inRedZone && redZoneWarningTimer) {
+            } else if (!closed.includes(myAddrKey) && redZoneWarningTimer) {
                 addLog("[안전] 안전 구역 진입. 카운트다운 중지.", "text-emerald-400");
                 clearInterval(redZoneWarningTimer); redZoneWarningTimer = null;
             }
@@ -216,7 +221,8 @@
 
         function playerDeath() {
             isDead = true; myHP = 0; clearInterval(redZoneWarningTimer);
-            addLog("탈출 실패... 당신은 전사했습니다.", "text-red-600 font-black text-lg");
+            const addr = `${String.fromCharCode(65+myPos.r)}-${myPos.c+1}`;
+            update(ref(db, 'game/world/lastEvent'), { id: Date.now(), type: 'death', msg: `${myName}님이 ${addr} 구역에서 소멸했습니다.` });
             document.getElementById('deathNotice').classList.remove('hidden');
             document.getElementById('farmBtn').disabled = true; document.getElementById('moveBtn').disabled = true;
             document.getElementById('farmBtn').classList.add('opacity-30'); document.getElementById('moveBtn').classList.add('opacity-30');
@@ -238,13 +244,17 @@
             addLog(`수색 중... (${farmCount}/2)`, "text-amber-500 animate-pulse");
             setTimeout(() => {
                 const rand = Math.random();
-                if(rand < 0.4) addLog("아무것도 찾지 못했습니다.");
+                if(rand < 0.03) { // 히든
+                    const h = ["AWM(히든)", "길리슈트(히든)"]; const res = h[Math.floor(Math.random()*h.length)];
+                    if(res.includes("슈트")) myArmor = res; else myWeapon = res;
+                    update(ref(db, 'game/world/lastEvent'), { id: Date.now(), type: 'item', msg: `${myName}님이 히든 아이템 [${res}]를 발견했습니다!` });
+                } else if(rand < 0.4) addLog("아무것도 찾지 못했습니다.");
                 else if(rand < 0.7) { addLog("붕대 발견! (+15 HP)", "text-emerald-400 font-bold"); myHP = Math.min(100, myHP + 15); }
                 else {
-                    const items = ["리볼버", "소방 도끼", "경찰 조끼 (Lv.1)", "크로스보우", "군용 조끼 (Lv.2)"];
-                    const res = items[Math.floor(Math.random()*items.length)];
+                    const i = ["리볼버", "소방 도끼", "경찰 조끼 (Lv.1)", "크로스보우", "군용 조끼 (Lv.2)"];
+                    const res = i[Math.floor(Math.random()*i.length)];
                     if(res.includes("조끼")) myArmor = res; else myWeapon = res;
-                    addLog(`[${res}] 장비를 확보했습니다!`, "text-sky-400 font-black");
+                    addLog(`[${res}] 획득!`, "text-sky-400 font-black");
                 }
                 updateUI();
             }, 600);
@@ -259,7 +269,14 @@
         window.showMove = () => { if(!isDead) document.getElementById('moveModal').classList.toggle('hidden'); };
         window.showManual = () => document.getElementById('manualModal').classList.toggle('hidden');
         
-        setInterval(() => { if(isAdmin && worldData.state === 'playing') { const cur = worldData.timer || 60; if(cur > 0) update(ref(db, 'game/world'), {timer: cur - 1}); else closeSectors(); }}, 1000);
+        // 어드민 전용 월드 타이머 구동
+        setInterval(() => {
+            if(isAdmin && worldData.state === 'playing') {
+                const cur = worldData.timer || 60;
+                if(cur > 0) update(ref(db, 'game/world'), {timer: cur - 1});
+                else closeSectors();
+            }
+        }, 1000);
     </script>
 </body>
 </html>
