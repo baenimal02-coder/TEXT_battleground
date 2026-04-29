@@ -6,34 +6,33 @@
     <title>TEXT BATTLEGROUNDS v0.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #0f172a; color: #f1f5f9; font-family: 'Courier New', Courier, monospace; touch-action: manipulation; }
+        body { background-color: #0f172a; color: #f1f5f9; font-family: 'Courier New', Courier, monospace; touch-action: manipulation; margin: 0; }
         .log-window::-webkit-scrollbar { width: 4px; }
         .log-window::-webkit-scrollbar-thumb { background: #334155; }
-        .sector { transition: all 0.3s; position: relative; }
+        .sector { transition: all 0.3s; position: relative; display: flex; align-items: center; justify-content: center; border-radius: 0.5rem; }
         .closed { background-color: #450a0a !important; color: #ef4444; opacity: 0.6; }
-        .airdrop { border: 2px dashed #f59e0b; animation: pulse 1s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         .hidden { display: none !important; }
-    </script>
+        #lobbyScreen { position: fixed; inset: 0; background-color: #0f172a; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem; }
+    </style>
 </head>
 <body class="h-screen flex flex-col p-2 max-w-2xl mx-auto overflow-hidden">
 
-    <div id="lobbyScreen" class="fixed inset-0 bg-slate-900 z-[100] flex flex-col items-center justify-center p-6 text-center">
+    <div id="lobbyScreen">
         <h1 class="text-4xl font-black text-amber-500 italic mb-2">TEXT BATTLEGROUNDS</h1>
-        <p class="text-slate-500 text-xs mb-8 uppercase tracking-widest">v0.2 Alpha Prototype</p>
+        <p class="text-slate-500 text-[10px] mb-8 uppercase tracking-widest">v0.2 Engine Running</p>
         
         <div id="loginBox" class="w-full max-w-xs space-y-4">
-            <input id="nickInput" type="text" placeholder="닉네임 입력 (admin 등)" class="w-full bg-slate-800 border-2 border-slate-700 p-4 rounded-xl text-center font-bold outline-none focus:border-amber-500 transition-all">
-            <button onclick="joinLobby()" class="w-full bg-amber-600 py-4 rounded-xl font-black text-lg shadow-xl active:scale-95 transition-all">전장 진입</button>
+            <input id="nickInput" type="text" placeholder="닉네임 입력 (admin 등)" class="w-full bg-slate-800 border-2 border-slate-700 p-4 rounded-xl text-center font-bold text-white outline-none focus:border-amber-500 transition-all">
+            <button onclick="joinLobby()" class="w-full bg-amber-600 py-4 rounded-xl font-black text-lg shadow-xl active:scale-95 transition-all text-white">전장 진입</button>
         </div>
 
         <div id="waitingBox" class="w-full max-w-xs space-y-4 hidden">
             <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
-                <p class="text-xs text-slate-500 mb-2">현재 접속자</p>
-                <div id="playerList" class="space-y-1 text-sm font-bold"></div>
+                <p class="text-[10px] text-slate-500 mb-2 uppercase font-bold">Current Players</p>
+                <div id="playerList" class="space-y-1 text-sm font-bold text-white"></div>
             </div>
-            <button id="readyBtn" onclick="toggleReady()" class="w-full bg-emerald-600 py-4 rounded-xl font-black text-lg shadow-xl active:scale-95 transition-all">READY</button>
-            <p id="startMsg" class="text-xs text-rose-400 font-bold animate-pulse"></p>
+            <button id="readyBtn" onclick="toggleReady()" class="w-full bg-emerald-600 py-4 rounded-xl font-black text-lg shadow-xl active:scale-95 transition-all text-white">READY</button>
+            <p id="startMsg" class="text-xs text-rose-400 font-bold mt-4"></p>
         </div>
     </div>
 
@@ -44,14 +43,11 @@
             <div class="text-center"><p class="text-[8px] text-slate-500 font-bold uppercase">Weapon</p><p id="wpDisp" class="text-[10px] font-bold truncate">맨주먹</p></div>
             <div class="text-center"><button id="adminSkip" onclick="adminSkip()" class="hidden bg-rose-600 px-2 py-1 rounded text-[10px] font-black">SKIP</button></div>
         </div>
-
-        <div id="mapGrid" class="grid grid-cols-5 gap-1 mb-2 aspect-square"></div>
-
+        <div id="mapGrid" class="grid grid-cols-5 gap-1 mb-2 aspect-square flex-none"></div>
         <div id="logWindow" class="log-window flex-1 bg-black/40 rounded-xl border border-slate-800 p-3 overflow-y-auto text-[11px] mb-2 leading-relaxed"></div>
-
         <div class="grid grid-cols-2 gap-2 mb-1">
-            <button onclick="farmItem()" class="bg-amber-600 py-3 rounded-lg font-black text-xs active:scale-95">🔍 파밍하기</button>
-            <button onclick="showMove()" class="bg-slate-700 py-3 rounded-lg font-black text-xs active:scale-95">🏃 이동</button>
+            <button onclick="farmItem()" class="bg-amber-600 py-3 rounded-lg font-black text-xs text-white">🔍 파밍하기</button>
+            <button onclick="showMove()" class="bg-slate-700 py-3 rounded-lg font-black text-xs text-white">🏃 이동</button>
         </div>
     </div>
 
@@ -61,7 +57,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-        import { getDatabase, ref, onValue, set, update, onDisconnect, remove } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+        import { getDatabase, ref, onValue, set, update, onDisconnect } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBjqzM3ScDSoINSMiCukjFG6z7MBjinI1M",
@@ -81,24 +77,19 @@
         let isAdmin = false;
         let isReady = false;
         let myPos = { r: 2, c: 2 };
-        let worldData = { state: 'waiting', timer: 60, closed: [], airdrop: "" };
+        let worldData = { state: 'waiting', timer: 60, closed: [] };
 
-        // [함수] 전장 진입
         window.joinLobby = () => {
             myName = document.getElementById('nickInput').value.trim();
-            if(!myName) return alert("닉네임을 입력하세요!");
-            
-            myId = "User_" + Math.random().toString(36).substring(2, 7);
+            if(!myName) return alert("닉네임!");
+            myId = "U_" + Math.random().toString(36).substring(2, 7);
             isAdmin = (myName === "admin");
-            
             document.getElementById('loginBox').classList.add('hidden');
             document.getElementById('waitingBox').classList.remove('hidden');
             if(isAdmin) document.getElementById('adminSkip').classList.remove('hidden');
-
             const myRef = ref(db, `game/players/${myId}`);
             set(myRef, { id: myId, name: myName, ready: false, pos: myPos, hp: 100 });
             onDisconnect(myRef).remove();
-
             syncLobby();
         };
 
@@ -107,27 +98,18 @@
                 const data = snap.val() || {};
                 const players = data.players || {};
                 worldData = data.world || worldData;
-
-                // 인원 표시
                 const pList = document.getElementById('playerList');
                 pList.innerHTML = Object.values(players).map(p => `<div>${p.ready ? '✅' : '⏳'} ${p.name}</div>`).join('');
-
-                // 시작 조건 체크
                 const pArray = Object.values(players);
                 const allReady = pArray.length > 0 && pArray.every(p => p.ready);
                 const minCount = isAdmin ? 1 : 2;
-
                 if(pArray.length >= minCount && allReady && worldData.state === 'waiting') {
-                    document.getElementById('startMsg').innerText = "잠시 후 게임이 시작됩니다!";
-                    if(isAdmin) setTimeout(startGame, 2000); // 어드민이 있으면 자동 시작 제어
-                } else {
-                    document.getElementById('startMsg').innerText = pArray.length < minCount ? `${minCount}명 이상 필요합니다.` : "모두 READY를 눌러주세요.";
+                    document.getElementById('startMsg').innerText = "곧 시작됩니다...";
+                    if(isAdmin) setTimeout(startGame, 2000);
                 }
-
                 if(worldData.state === 'playing') {
                     document.getElementById('lobbyScreen').classList.add('hidden');
                     document.getElementById('gameScreen').classList.remove('hidden');
-                    renderMap();
                     updateUI();
                 }
             });
@@ -136,92 +118,66 @@
         window.toggleReady = () => {
             isReady = !isReady;
             update(ref(db, `game/players/${myId}`), { ready: isReady });
-            document.getElementById('readyBtn').className = isReady ? "w-full bg-slate-600 py-4 rounded-xl font-black text-lg" : "w-full bg-emerald-600 py-4 rounded-xl font-black text-lg";
+            document.getElementById('readyBtn').innerText = isReady ? "READY OK" : "READY";
         };
 
         function startGame() {
-            const initialWorld = { state: 'playing', timer: 60, closed: [], airdrop: "" };
-            set(ref(db, 'game/world'), initialWorld);
-            addLog("배틀로얄이 시작되었습니다! 낙하 완료.", "text-amber-400 font-bold");
+            update(ref(db, 'game/world'), { state: 'playing', timer: 60, closed: [] });
             startTimer();
         }
 
         function startTimer() {
             setInterval(() => {
                 if(!isAdmin || worldData.state !== 'playing') return;
-                if(worldData.timer > 0) {
-                    update(ref(db, 'game/world'), { timer: worldData.timer - 1 });
-                } else {
-                    closeSectors();
-                }
+                if(worldData.timer > 0) update(ref(db, 'game/world'), { timer: worldData.timer - 1 });
+                else closeSectors();
             }, 1000);
         }
 
         window.adminSkip = () => { if(isAdmin) closeSectors(); };
 
         function closeSectors() {
-            const allSectors = [];
-            for(let i=0; i<5; i++) for(let j=0; j<5; j++) allSectors.push(String.fromCharCode(65+i)+(j+1));
-            const available = allSectors.filter(s => !worldData.closed.includes(s));
-            if(available.length <= 1) return;
-
+            const all = [];
+            for(let i=0; i<5; i++) for(let j=0; j<5; j++) all.push(String.fromCharCode(65+i)+(j+1));
+            const avail = all.filter(s => !worldData.closed.includes(s));
+            if(avail.length <= 1) return;
             const toClose = [];
             for(let i=0; i<2; i++) {
-                const rand = Math.floor(Math.random() * available.length);
-                toClose.push(available.splice(rand, 1)[0]);
+                const r = Math.floor(Math.random() * avail.length);
+                toClose.push(avail.splice(r, 1)[0]);
             }
-            
-            const newClosed = [...worldData.closed, ...toClose];
-            update(ref(db, 'game/world'), { closed: newClosed, timer: 60 });
-            addLog(`자기장 축소! ${toClose.join(', ')} 구역이 폐쇄되었습니다.`, "text-rose-500 font-bold");
+            update(ref(db, 'game/world'), { closed: [...worldData.closed, ...toClose], timer: 60 });
         }
 
-        function renderMap() {
+        function updateUI() {
+            document.getElementById('timerDisp').innerText = worldData.timer + "s";
             const grid = document.getElementById('mapGrid');
             const mGrid = document.getElementById('moveGrid');
             grid.innerHTML = ''; mGrid.innerHTML = '';
-
             for(let r=0; r<5; r++) {
                 for(let c=0; c<5; c++) {
                     const addr = String.fromCharCode(65+r)+(c+1);
                     const isClosed = worldData.closed.includes(addr);
                     const isMe = (myPos.r === r && myPos.c === c);
-
-                    const div = document.createElement('div');
-                    div.className = `sector bg-slate-700 rounded-lg flex items-center justify-center text-[10px] font-bold ${isClosed?'closed':''} ${isMe?'ring-2 ring-emerald-500 bg-slate-600':''}`;
-                    div.innerText = isMe ? "● " + addr : addr;
-                    grid.appendChild(div);
-
-                    const btn = document.createElement('button');
-                    btn.className = `p-2 rounded text-[10px] font-bold ${isClosed?'bg-red-900 text-red-400':'bg-slate-700'}`;
-                    btn.innerText = addr;
-                    btn.onclick = () => { if(!isClosed) { myPos={r,c}; update(ref(db, `game/players/${myId}`), {pos:myPos}); showMove(); addLog(`${addr}로 이동.`); } };
-                    mGrid.appendChild(btn);
+                    const d = document.createElement('div');
+                    d.className = `sector bg-slate-700 text-white ${isClosed?'closed':''} ${isMe?'ring-2 ring-emerald-500 bg-slate-600':''}`;
+                    d.innerText = isMe ? "●" : addr;
+                    grid.appendChild(d);
+                    const b = document.createElement('button');
+                    b.className = `p-2 rounded text-[10px] text-white ${isClosed?'bg-red-900':'bg-slate-700'}`;
+                    b.innerText = addr;
+                    b.onclick = () => { if(!isClosed) { myPos={r,c}; update(ref(db, `game/players/${myId}`), {pos:myPos}); showMove(); } };
+                    mGrid.appendChild(b);
                 }
             }
         }
 
-        function addLog(msg, clr="text-slate-400") {
-            const log = document.getElementById('logWindow');
-            log.innerHTML += `<p class="${clr}">> ${msg}</p>`;
-            log.scrollTop = log.scrollHeight;
-        }
-
         window.showMove = () => document.getElementById('moveModal').classList.toggle('hidden');
         window.farmItem = () => {
-            addLog("수색 중...");
-            setTimeout(() => {
-                const rand = Math.random();
-                if(rand < 0.3) addLog("쇠파이프를 획득했습니다!", "text-white");
-                else if(rand < 0.6) addLog("구급상자를 발견했습니다.", "text-emerald-400");
-                else addLog("아무것도 찾지 못했습니다.");
-            }, 800);
+            const log = document.getElementById('logWindow');
+            log.innerHTML += `<p class="text-slate-400">> 수색 중...</p>`;
+            log.scrollTop = log.scrollHeight;
         };
-
-        function updateUI() {
-            document.getElementById('timerDisp').innerText = worldData.timer + "s";
-            renderMap();
-        }
     </script>
 </body>
 </html>
