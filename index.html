@@ -3,72 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Office Talk v0.03 Persona</title>
+    <title>Office Tile War v0.05</title>
     <style>
-        :root { --primary: #2c3e50; --accent: #3498db; --bg: #f0f2f5; }
-        body { font-family: 'Malgun Gothic', sans-serif; background: var(--bg); margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
-        #app { background: white; width: 450px; height: 90vh; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); display: flex; flex-direction: column; overflow: hidden; }
+        :root { --bg: #f0f2f5; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        #app { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; }
         
         /* Lobby */
-        #lobby { padding: 40px; text-align: center; display: flex; flex-direction: column; justify-content: center; height: 100%; box-sizing: border-box; }
-        .logo { font-size: 32px; font-weight: 900; color: var(--primary); margin-bottom: 5px; }
-        .sub-logo { color: #888; margin-bottom: 30px; font-size: 14px; }
-        select { padding: 15px; margin-bottom: 20px; border-radius: 12px; border: 2px solid #eee; font-size: 16px; width: 100%; outline: none; transition: 0.2s; }
-        select:focus { border-color: var(--accent); }
-        .btn-entry { padding: 18px; background: var(--primary); color: white; border: none; border-radius: 12px; cursor: pointer; font-size: 18px; font-weight: bold; }
+        .char-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
+        .char-card { padding: 10px; border: 2px solid #eee; border-radius: 10px; cursor: pointer; transition: 0.2s; }
+        .char-card.selected { border-color: #3498db; background: #ebf5ff; }
 
-        /* Chat Room */
-        #chat-room { display: none; flex-direction: column; height: 100%; }
-        header { padding: 18px 25px; background: var(--primary); color: white; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        #chat-box { flex: 1; overflow-y: auto; padding: 20px; background: #f8f9fa; display: flex; flex-direction: column; gap: 15px; }
+        /* Game Board */
+        #game-screen { display: none; }
+        .scoreboard { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 20px; font-size: 14px; font-weight: bold; }
+        .score-item { padding: 5px 10px; border-radius: 15px; color: white; }
         
-        .msg { max-width: 80%; display: flex; flex-direction: column; }
-        .msg.mine { align-self: flex-end; align-items: flex-end; }
-        .msg.other { align-self: flex-start; align-items: flex-start; }
-        .msg.sys { align-self: center; background: #e2e8f0; color: #64748b; font-size: 11px; padding: 5px 15px; border-radius: 20px; margin: 10px 0; }
-        
-        .sender { font-size: 12px; color: #666; margin-bottom: 5px; font-weight: bold; }
-        .bubble { padding: 12px 16px; border-radius: 18px; font-size: 15px; line-height: 1.6; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .mine .bubble { background: #3498db; color: white; border-bottom-right-radius: 2px; }
-        .other .bubble { background: white; color: #2d3436; border-bottom-left-radius: 2px; border: 1px solid #edf2f7; }
-
-        .input-area { padding: 20px; display: flex; background: white; border-top: 1px solid #edf2f7; align-items: center; }
-        #chat-input { flex: 1; padding: 14px 22px; border: 1px solid #e2e8f0; border-radius: 30px; outline: none; font-size: 15px; background: #f8f9fa; }
-        #chat-input:focus { background: white; border-color: var(--accent); }
-        #send-btn { margin-left: 12px; background: var(--accent); color: white; border: none; border-radius: 50%; width: 48px; height: 48px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: 0.2s; }
-        #send-btn:hover { transform: scale(1.05); }
+        .grid { display: grid; grid-template-columns: repeat(10, 35px); grid-template-rows: repeat(10, 35px); gap: 4px; border: 4px solid #333; padding: 4px; background: #333; border-radius: 8px; }
+        .tile { background: white; border-radius: 4px; cursor: pointer; transition: background 0.1s; }
+        .tile:hover { filter: brightness(0.9); }
     </style>
 </head>
 <body>
 
 <div id="app">
+    <!-- 1. 캐릭터 선택 로비 -->
     <div id="lobby">
-        <div class="logo">OFFICE TALK</div>
-        <div class="sub-logo">v0.03 Persona Update</div>
-        <select id="char-select">
-            <option value="김정한">김정한 (팀장 - KPI 압박)</option>
-            <option value="조현우">조현우 (대리 - 퇴사 광기)</option>
-            <option value="이정우">이정우 (과장 - 번아웃 중)</option>
-            <option value="박희성">박희성 (사원 - 무한 열정)</option>
-            <option value="임재남">임재남 (부장 - 라떼 부장)</option>
-            <option value="배상호">배상호 (인턴 - 쿠쿠다스 멘탈)</option>
-        </select>
-        <button id="entry-btn" class="btn-entry">사내 메신저 접속</button>
+        <h2>타일 점령전</h2>
+        <p>캐릭터를 선택하고 땅을 넓히세요!</p>
+        <div class="char-grid" id="char-list"></div>
+        <button id="start-btn" style="width:100%; padding:15px; background:#333; color:white; border:none; border-radius:10px; cursor:pointer; font-weight:bold;">게임 입장</button>
     </div>
 
-    <div id="chat-room">
-        <header><span id="user-display"></span> <span>대화방</span></header>
-        <div id="chat-box"></div>
-        <div class="input-area">
-            <input type="text" id="chat-input" placeholder="메시지를 입력하세요..." autocomplete="off">
-            <button id="send-btn">➤</button>
-        </div>
+    <!-- 2. 게임 화면 -->
+    <div id="game-screen">
+        <div class="scoreboard" id="scoreboard"></div>
+        <div class="grid" id="tile-grid"></div>
+        <p style="margin-top:15px; color:#666; font-size:12px;">타일을 클릭하여 자신의 색으로 점령하세요!</p>
     </div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-    import { getDatabase, ref, onValue, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+    import { getDatabase, ref, onValue, set, update } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 
     const firebaseConfig = { 
         apiKey: "AIzaSyBjqzM3ScDSoINSMiCukjFG6z7MBjinI1M", 
@@ -83,100 +60,74 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    let myName = "";
-    
-    // 캐릭터별 확장된 말버릇 DB
-    const personaData = {
-        "김정한": {
-            pre: ["[확인 부탁드립니다] ", "[긴급] ", "다름이 아니라, ", "결론부터 말씀드리면 "],
-            post: [" (공유 바랍니다)", " KPI 달성 방안 보고하세요.", " 이번 주까지 피드백 주세요.", " 확인 후 회신 바랍니다."]
-        },
-        "조현우": {
-            pre: ["아니 진짜, ", "하... ", "내일 로또 되면 ", "이게 맞나? "],
-            post: [" 아 시발 퇴사하고싶다", " ...사표 어딨더라", " 시발 월급 빼고 다 올라", " 진짜 때려친다"]
-        },
-        "이정우": {
-            pre: ["(한숨) ", "후우... ", "어떻게든... ", "하아... "],
-            post: [" ...피곤하네요", " ...자고 싶다", " ...집 가도 될까요?", " ...눈이 침침하네요"]
-        },
-        "박희성": {
-            pre: ["🔥 ", "대박!! ", "와!! ", "럭키비키!! "],
-            post: ["!! 가즈아아!!", "!! 완전 짱인데요?", "!! 화이팅입니다!!", "!! 역시 최고입니다!!"]
-        },
-        "임재남": {
-            pre: ["라떼는 말이야, ", "허허, 참... ", "요즘 애들은... ", "자고로 사람이... "],
-            post: [" 허허허...", " 쯧쯧...", " 거 참 보기 안 좋구먼.", " 나 때는 안 그랬어."]
-        },
-        "배상호": {
-            pre: ["저기... 혹시... ", "죄송합니다만... ", "그게... ", "아, 저... "],
-            post: [" (죄송합니다!)", " (식은땀...)", " (눈치를 보며)", " 제가 해도 될까요?"]
+    const chars = [
+        { name: "김정한", color: "#e74c3c" }, { name: "조현우", color: "#3498db" },
+        { name: "이정우", color: "#f1c40f" }, { name: "박희성", color: "#2ecc71" },
+        { name: "임재남", color: "#9b59b6" }, { name: "배상호", color: "#34495e" }
+    ];
+
+    let myChar = null;
+
+    // 로비 구성
+    const charListDiv = document.getElementById('char-list');
+    chars.forEach(c => {
+        const card = document.createElement('div');
+        card.className = 'char-card';
+        card.innerHTML = `<div style="width:30px; height:30px; background:${c.color}; margin:0 auto 5px; border-radius:50%;"></div>${c.name}`;
+        card.onclick = () => {
+            document.querySelectorAll('.char-card').forEach(el => el.classList.remove('selected'));
+            card.classList.add('selected');
+            myChar = c;
+        };
+        charListDiv.appendChild(card);
+    });
+
+    // 게임 시작
+    document.getElementById('start-btn').onclick = () => {
+        if(!myChar) return alert("캐릭터를 선택해주세요!");
+        document.getElementById('lobby').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'block';
+        initGrid();
+    };
+
+    // 그리드 생성 및 클릭 이벤트
+    function initGrid() {
+        const gridDiv = document.getElementById('tile-grid');
+        for(let i=0; i<100; i++) {
+            const tile = document.createElement('div');
+            tile.className = 'tile';
+            tile.id = `tile-${i}`;
+            tile.onclick = () => {
+                set(ref(db, `tiles/${i}`), { owner: myChar.name, color: myChar.color });
+            };
+            gridDiv.appendChild(tile);
         }
-    };
+    }
 
-    const lobby = document.getElementById('lobby');
-    const chatRoom = document.getElementById('chat-room');
-    const chatBox = document.getElementById('chat-box');
+    // 실시간 동기화 (타일 및 점수)
+    onValue(ref(db, 'tiles'), (snap) => {
+        const data = snap.val() || {};
+        const scores = {};
+        chars.forEach(c => scores[c.name] = 0);
 
-    document.getElementById('entry-btn').onclick = () => {
-        myName = document.getElementById('char-select').value;
-        lobby.style.display = 'none';
-        chatRoom.style.display = 'flex';
-        document.getElementById('user-display').innerText = myName;
-        push(ref(db, 'chat'), { sender: "SYS", message: `${myName}님이 입장하셨습니다.`, type: "sys" });
-    };
-
-    // 말투 무작위 합성 로직
-    const synthesizePersona = (text, name) => {
-        const data = personaData[name];
-        if(!data) return text;
-        
-        const randomPre = data.pre[Math.floor(Math.random() * data.pre.length)];
-        const randomPost = data.post[Math.floor(Math.random() * data.post.length)];
-        
-        const mode = Math.random();
-        if(mode < 0.4) return randomPre + text + randomPost; // 40% 확률로 앞뒤 다
-        else if(mode < 0.7) return randomPre + text;        // 30% 확률로 앞만
-        else return text + randomPost;                      // 30% 확률로 뒤만
-    };
-
-    const sendMessage = () => {
-        const input = document.getElementById('chat-input');
-        const raw = input.value.trim();
-        if(!raw) return;
-
-        const finalMsg = synthesizePersona(raw, myName);
-        push(ref(db, 'chat'), {
-            sender: myName,
-            message: finalMsg,
-            timestamp: serverTimestamp()
-        });
-        input.value = "";
-    };
-
-    document.getElementById('send-btn').onclick = sendMessage;
-    document.getElementById('chat-input').onkeypress = (e) => { if(e.key === 'Enter') sendMessage(); };
-
-    onValue(ref(db, 'chat'), (snap) => {
-        chatBox.innerHTML = "";
-        const val = snap.val();
-        if(!val) return;
-        
-        Object.values(val).forEach(msg => {
-            const msgDiv = document.createElement('div');
-            if(msg.type === 'sys') {
-                msgDiv.className = 'msg sys';
-                msgDiv.innerText = msg.message;
-            } else {
-                const isMine = msg.sender === myName;
-                msgDiv.className = `msg ${isMine ? 'mine' : 'other'}`;
-                msgDiv.innerHTML = `
-                    ${!isMine ? `<span class="sender">${msg.sender}</span>` : ''}
-                    <div class="bubble">${msg.message}</div>
-                `;
+        for(let i=0; i<100; i++) {
+            const tileEl = document.getElementById(`tile-${i}`);
+            if(data[i]) {
+                tileEl.style.background = data[i].color;
+                scores[data[i].owner]++;
             }
-            chatBox.appendChild(msgDiv);
+        }
+
+        // 스코어보드 업데이트
+        const scoreDiv = document.getElementById('scoreboard');
+        scoreDiv.innerHTML = "";
+        chars.forEach(c => {
+            const item = document.createElement('div');
+            item.className = 'score-item';
+            item.style.background = c.color;
+            item.innerText = `${c.name}: ${scores[c.name]}`;
+            scoreDiv.appendChild(item);
         });
-        chatBox.scrollTop = chatBox.scrollHeight;
     });
 </script>
 </body>
