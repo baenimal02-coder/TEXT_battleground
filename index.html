@@ -161,32 +161,3 @@ html_content = """
 </script>
 </body>
 </html>
-"""
-
-# 파이썬 실행기 생성
-launcher_code = f'''
-import os
-import webbrowser
-from http.server import SimpleHTTPRequestHandler, HTTPServer
-import threading
-
-def create_file():
-    with open("index.html", "w", encoding="utf-8") as f:
-        f.write("""{html_content}""")
-    print("✓ index.html 생성 완료.")
-
-def run_server():
-    server_address = ('', 8080)
-    httpd = HTTPServer(server_address, SimpleHTTPRequestHandler)
-    print("✓ 로컬 서버 실행 중 (http://localhost:8080)")
-    webbrowser.open("http://localhost:8080")
-    httpd.serve_forever()
-
-if __name__ == "__main__":
-    create_file()
-    threading.Thread(target=run_server, daemon=True).start()
-    input("\\n종료하려면 Enter를 누르세요...")
-'''
-
-with open("office_talk_launcher.py", "w", encoding="utf-8") as f:
-    f.write(launcher_code)
