@@ -1,100 +1,118 @@
+html_code = """
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>KIMM BG v0.04 Super Alpha</title>
+    <title>KIMM: 연구동 점유전 v0.01</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #020617; color: #f8fafc; font-family: 'Courier New', Courier, monospace; touch-action: manipulation; margin: 0; overflow: hidden; height: 100dvh; }
+        body { background-color: #020617; color: #f8fafc; font-family: 'Pretendard', sans-serif; touch-action: manipulation; margin: 0; overflow: hidden; height: 100dvh; }
         .grid-map { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(5, 1fr); gap: 4px; height: 100%; width: 100%; }
-        .sector { border: 1px solid #1e293b; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; border-radius: 4px; background: #0f172a; color: #475569; position: relative; }
-        .closed { background-color: #450a0a !important; border-color: #ef4444 !important; color: #ef4444 !important; opacity: 0.8; }
-        .is-me { border-color: #10b981 !important; color: #fff !important; background-color: #064e3b !important; z-index: 10; box-shadow: inset 0 0 10px #10b981; }
-        .is-me::after { content: '●'; color: #ef4444; position: absolute; top: 1px; right: 3px; animation: blink 0.8s infinite; font-size: 14px; text-shadow: 0 0 5px #ef4444; }
+        .sector { border: 1px solid #1e293b; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; border-radius: 6px; background: #0f172a; color: #475569; position: relative; transition: all 0.3s; }
+        .is-me { border-color: #10b981 !important; color: #fff !important; z-index: 10; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
+        .is-me::after { content: '●'; color: #ef4444; position: absolute; top: 1px; right: 3px; animation: blink 0.8s infinite; font-size: 12px; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        .occupied { background-color: #1e1b4b !important; border-color: #4338ca !important; color: #818cf8 !important; }
         .log-window::-webkit-scrollbar { width: 4px; }
         .log-window::-webkit-scrollbar-thumb { background: #334155; }
         .hidden { display: none !important; }
         .modal { position: fixed; inset: 0; background-color: rgba(0,0,0,0.95); z-index: 1000; display: flex; flex-direction: column; padding: 1.5rem; }
-        .slot-box { background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 4px; text-align: center; min-height: 35px; }
+        .slot-box { background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 4px; text-align: center; }
     </style>
 </head>
 <body class="flex flex-col max-w-lg mx-auto">
 
-    <!-- [1] 로비 -->
-    <div id="lobbyScreen" class="fixed inset-0 bg-slate-950 z-[2000] flex flex-col items-center justify-center p-6 text-center">
-        <h1 class="text-4xl font-black text-amber-500 italic mb-1 uppercase tracking-tighter">KIMM BG</h1>
-        <p class="text-slate-600 font-bold text-[9px] mb-12 tracking-[0.4em] uppercase">v0.04 Super Alpha [Fixed]</p>
-        <div id="loginBox" class="w-full max-w-xs space-y-4">
-            <input id="nickInput" type="text" placeholder="닉네임 입력" class="w-full bg-slate-900 border-2 border-slate-800 p-4 rounded-2xl text-center text-white outline-none focus:border-amber-500 font-bold">
-            <button onclick="joinLobby()" class="w-full bg-amber-600 py-4 rounded-2xl font-black text-white text-lg shadow-2xl active:scale-95 transition-all">전장 접속</button>
+    <!-- [1] 로그인 로비 (드롭다운 방식) -->
+    <div id="lobbyScreen" class="fixed inset-0 bg-slate-950 z-[2000] flex flex-col items-center justify-center p-8 text-center">
+        <h1 class="text-3xl font-black text-indigo-500 italic mb-2 uppercase tracking-tighter">KIMM</h1>
+        <p class="text-white text-xl font-bold mb-1">연구동 점유전</p>
+        <p class="text-slate-600 font-bold text-[9px] mb-12 tracking-[0.4em] uppercase">v0.01 Super Alpha</p>
+        
+        <div id="loginBox" class="w-full max-w-xs space-y-6">
+            <div class="space-y-2">
+                <label class="text-xs text-slate-500 font-bold uppercase tracking-widest">연구원 선택</label>
+                <select id="charSelect" class="w-full bg-slate-900 border-2 border-slate-800 p-4 rounded-2xl text-white outline-none focus:border-indigo-500 font-bold appearance-none">
+                    <option value="조현우">조현우 (PM)</option>
+                    <option value="김정한">김정한 (Engineer)</option>
+                    <option value="임재남">임재남 (Security)</option>
+                    <option value="이정우">이정우 (Researcher)</option>
+                    <option value="배상호">배상호 (Strategist)</option>
+                    <option value="박희성">박희성 (Logistics)</option>
+                    <option value="admin">관리자 (Admin)</option>
+                </select>
+            </div>
+            <button onclick="joinLobby()" class="w-full bg-indigo-600 py-4 rounded-2xl font-black text-white text-lg shadow-2xl active:scale-95 transition-all">전용 단말기 접속</button>
         </div>
+
         <div id="waitingBox" class="w-full max-w-xs space-y-4 hidden text-white">
-            <div id="playerList" class="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 font-bold space-y-2 mb-4 shadow-inner"></div>
-            <p id="startMsg" class="text-[10px] text-rose-400 font-bold mb-4 uppercase"></p>
-            <button id="readyBtn" onclick="toggleReady()" class="w-full bg-emerald-600 py-4 rounded-2xl font-black text-white text-lg shadow-lg">전투 준비 완료</button>
+            <div id="playerList" class="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 font-bold space-y-2 mb-4 text-left"></div>
+            <button id="readyBtn" onclick="toggleReady()" class="w-full bg-emerald-600 py-4 rounded-2xl font-black text-white text-lg shadow-lg">연구 시작</button>
         </div>
     </div>
 
-    <!-- [2] 낙하 선택 -->
+    <!-- [2] 낙하/배치 선택 -->
     <div id="landingScreen" class="fixed inset-0 bg-slate-950 z-[1500] flex flex-col p-6 hidden">
-        <h2 class="text-2xl font-black text-amber-500 mb-2 italic text-center uppercase">낙하 지점 선택</h2>
-        <div class="flex-1 min-h-0 bg-black/40 p-2 rounded-2xl border border-slate-800 shadow-2xl text-white">
-            <div id="landingGrid" class="grid grid-cols-5 grid-rows-5 gap-1 h-full w-full"></div>
+        <h2 class="text-2xl font-black text-indigo-400 mb-2 italic text-center">첫 연구실 배치</h2>
+        <p class="text-center text-[10px] text-slate-500 mb-6 font-bold uppercase">배치될 구역을 선택하십시오.</p>
+        <div class="flex-1 min-h-0 bg-black/40 p-2 rounded-2xl border border-slate-800 shadow-2xl">
+            <div id="landingGrid" class="grid-map text-white"></div>
         </div>
     </div>
 
-    <!-- [3] 승리 화면 -->
+    <!-- [3] 결과/승리 화면 -->
     <div id="victoryScreen" class="fixed inset-0 bg-black/95 z-[3000] flex flex-col items-center justify-center p-6 text-center hidden">
-        <p class="text-amber-500 text-7xl mb-6 drop-shadow-[0_0_20px_rgba(245,158,11,0.2)]">🏆</p>
-        <h1 class="text-4xl font-black text-white mb-2 italic uppercase">WINNER WINNER!</h1>
-        <div class="bg-amber-950/40 py-8 px-10 rounded-[3rem] border-2 border-amber-500/50 shadow-[0_0_50px_rgba(245,158,11,0.2)] text-amber-400 font-black leading-tight">당신은 승리해서<br>원장이 되었습니다</div>
-        <button onclick="location.reload()" class="mt-16 text-slate-500 font-bold uppercase underline">다시 로비로</button>
+        <p class="text-indigo-500 text-7xl mb-6">📂</p>
+        <h1 class="text-4xl font-black text-white mb-2 italic uppercase">Project Approved!</h1>
+        <div class="bg-indigo-950/40 py-8 px-10 rounded-[3rem] border-2 border-indigo-500/50 shadow-[0_0_50px_rgba(79,70,229,0.2)] text-indigo-300 font-black leading-tight">
+            당신은 프로젝트를 완수하여<br>원장이 되었습니다
+        </div>
+        <button onclick="location.reload()" class="mt-16 text-slate-500 font-bold uppercase underline">Next Project</button>
     </div>
 
     <!-- [4] 메인 게임 화면 -->
     <div id="gameScreen" class="flex flex-col h-screen hidden p-2">
-        <div class="flex-none mb-2 bg-slate-900 p-2 rounded-2xl border border-slate-800 shadow-xl text-white">
+        <!-- 상단 스탯 (Budget, Stress, Progress) -->
+        <div class="flex-none mb-2 bg-slate-900 p-3 rounded-2xl border border-slate-800 shadow-xl text-white">
             <div class="grid grid-cols-4 gap-1">
-                <div class="text-center border-r border-slate-800"><p class="text-[6px] text-slate-500 font-bold uppercase">체력</p><p id="hpDisp" class="text-xs font-black text-emerald-400">100</p></div>
-                <div class="text-center border-r border-slate-800"><p class="text-[7px] text-slate-500 font-bold uppercase">자기장</p><p id="timerDisp" class="text-xs font-black text-rose-500">60s</p></div>
-                <div class="text-center border-r border-slate-800"><p class="text-[6px] text-slate-500 font-bold uppercase">무기</p><p id="wpDisp" class="text-[8px] font-bold text-amber-300 truncate px-1">맨주먹</p></div>
-                <div class="text-center"><p class="text-[6px] text-slate-500 font-bold uppercase">방어구</p><p id="arDisp" class="text-[8px] font-bold text-blue-400 truncate px-1">없음</p></div>
+                <div class="text-center border-r border-slate-800"><p class="text-[6px] text-slate-500 font-bold uppercase">예산</p><p id="budDisp" class="text-[10px] font-black text-emerald-400">0</p></div>
+                <div class="text-center border-r border-slate-800"><p class="text-[6px] text-slate-500 font-bold uppercase">스트레스</p><p id="strDisp" class="text-[10px] font-black text-rose-400">0%</p></div>
+                <div class="text-center border-r border-slate-800"><p class="text-[6px] text-slate-500 font-bold uppercase">진척도</p><p id="progDisp" class="text-[10px] font-black text-indigo-400">0%</p></div>
+                <div class="text-center"><p class="text-[6px] text-slate-500 font-bold uppercase">접속자</p><p id="survDisp" class="text-[10px] font-black text-blue-400">0</p></div>
             </div>
         </div>
 
         <div class="flex-1 flex flex-col min-h-0">
-            <!-- 실시간 맵 -->
+            <!-- 실시간 연구동 맵 -->
             <div class="basis-[40%] p-1 bg-black/20 rounded-2xl border border-slate-900 overflow-hidden mb-2">
-                <div id="mapGrid" class="grid grid-cols-5 grid-rows-5 gap-1 h-full w-full"></div>
+                <div id="mapGrid" class="grid-map"></div>
             </div>
 
-            <!-- 인벤토리 & 로그 -->
+            <!-- 인벤토리 & 점유 로그 -->
             <div class="basis-[60%] flex flex-col bg-black/60 rounded-2xl border border-slate-900 overflow-hidden shadow-inner">
                 <div class="bg-slate-950/80 p-2 border-b border-slate-900 grid grid-cols-4 gap-2">
-                    <div class="slot-box text-[6px] text-slate-600 font-bold uppercase">인벤1<p id="inv1" class="text-[8px] text-emerald-400 mt-1 truncate">-</p></div>
-                    <div class="slot-box text-[6px] text-slate-600 font-bold uppercase">인벤2<p id="inv2" class="text-[8px] text-emerald-400 mt-1 truncate">-</p></div>
-                    <div class="slot-box text-[6px] text-slate-600 font-bold uppercase">인벤3<p id="inv3" class="text-[8px] text-emerald-400 mt-1 truncate">-</p></div>
-                    <div class="slot-box text-[6px] text-slate-600 font-bold uppercase">인벤4<p id="inv4" class="text-[8px] text-emerald-400 mt-1 truncate">-</p></div>
+                    <div class="slot-box text-[6px] text-slate-600 font-bold">ITEM 1<p id="inv1" class="text-[8px] text-amber-400 mt-1 truncate">-</p></div>
+                    <div class="slot-box text-[6px] text-slate-600 font-bold">ITEM 2<p id="inv2" class="text-[8px] text-amber-400 mt-1 truncate">-</p></div>
+                    <div class="slot-box text-[6px] text-slate-600 font-bold">ITEM 3<p id="inv3" class="text-[8px] text-amber-400 mt-1 truncate">-</p></div>
+                    <div class="slot-box text-[6px] text-slate-600 font-bold">ITEM 4<p id="inv4" class="text-[8px] text-amber-400 mt-1 truncate">-</p></div>
                 </div>
                 <div id="logWindow" class="flex-1 p-4 overflow-y-auto text-[11px] leading-relaxed">
-                    <p id="deathNotice" class="text-rose-500 font-bold hidden text-center mb-2 animate-pulse uppercase">전사했습니다. 관전 모드로 전환됩니다.</p>
+                    <p class="text-indigo-400 font-bold mb-2 tracking-tighter uppercase border-b border-indigo-900/50 pb-1">[SYSTEM TERMINAL]</p>
                 </div>
             </div>
         </div>
 
         <div id="actionPanel" class="flex-none pb-[env(safe-area-inset-bottom)] mt-2">
-            <button id="adminSkip" onclick="adminSkip()" class="hidden bg-rose-900 w-full py-2 rounded-xl text-[10px] font-black text-white mb-2 uppercase border border-rose-700 tracking-widest animate-pulse">자기장 즉시 소환 (GM)</button>
+            <button id="adminSkip" onclick="adminWipe()" class="hidden bg-rose-900 w-full py-2 rounded-xl text-[10px] font-black text-white mb-2 uppercase tracking-widest animate-pulse border border-rose-700">Server Hard Reset (GM)</button>
             <div class="grid grid-cols-3 gap-2">
-                <button onclick="farmItem()" id="farmBtn" class="bg-amber-600 py-5 rounded-2xl font-black text-xs text-white shadow-xl active:bg-amber-500 transition-all">🔍 파밍(0/2)</button>
-                <button onclick="showMove()" id="moveBtn" class="bg-slate-800 py-5 rounded-2xl font-black text-xs text-white shadow-xl active:bg-slate-700 transition-all">🏃 이동</button>
-                <button onclick="showManual()" class="bg-indigo-900 py-5 rounded-2xl font-black text-xs text-white shadow-xl">📖 도감</button>
+                <button onclick="exploreRoom()" id="exploreBtn" class="bg-slate-800 py-5 rounded-2xl font-black text-xs text-white shadow-xl active:bg-slate-700 transition-all">🔍 탐색</button>
+                <button onclick="showMove()" id="moveBtn" class="bg-indigo-600 py-5 rounded-2xl font-black text-xs text-white shadow-xl active:bg-indigo-500 transition-all">🏃 이동</button>
+                <button onclick="occupyRoom()" id="occupyBtn" class="bg-emerald-700 py-5 rounded-2xl font-black text-xs text-white shadow-xl active:bg-emerald-600 transition-all">🚩 점유</button>
             </div>
         </div>
     </div>
 
-    <div id="moveModal" class="modal hidden"><h2 class="text-center text-white font-black mb-6 uppercase italic border-b border-slate-800 pb-2 tracking-widest text-sm">구역 선택</h2><div id="moveGrid" class="grid grid-cols-5 grid-rows-5 gap-1 h-[60%] w-full"></div><button onclick="showMove()" class="mt-auto py-5 bg-slate-900 rounded-2xl text-slate-500 font-bold uppercase tracking-widest border border-slate-800">닫기</button></div>
+    <div id="moveModal" class="modal hidden"><h2 class="text-center text-white font-black mb-6 uppercase italic border-b border-slate-800 pb-2 text-sm tracking-widest">이동할 연구실 선택</h2><div id="moveGrid" class="grid-map h-[60%] w-full"></div><button onclick="showMove()" class="mt-auto py-5 bg-slate-900 rounded-2xl text-slate-500 font-bold uppercase tracking-widest border border-slate-800 transition-all active:bg-slate-800">닫기</button></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
@@ -104,41 +122,46 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        let myId, myName, isAdmin, myPos = null, farmCount = 0;
-        let worldData = { state: 'waiting', timer: 60, closed_zones: {} };
-        let isDead = false, isWon = false, lastEventId = null, localTime = 0;
-        let redZoneInterval = null, redZoneTime = 30;
+        let myId, myName, myRole, isAdmin, myPos = null;
+        let worldData = { state: 'waiting', occupied: {} };
+        let lastEventId = null, localTime = 0, isWon = false;
 
         window.joinLobby = () => {
-            const input = document.getElementById('nickInput').value.trim(); if(!input) return;
-            myName = input; myId = "U_" + Math.random().toString(36).substring(2, 7);
-            isAdmin = (myName.toLowerCase() === "admin");
-            document.getElementById('loginBox').classList.add('hidden'); document.getElementById('waitingBox').classList.remove('hidden');
+            const select = document.getElementById('charSelect');
+            myName = select.value;
+            myId = "U_" + Math.random().toString(36).substring(2, 7);
+            isAdmin = (myName === "admin");
+            
+            const roles = { "조현우":"PM", "김정한":"Engineer", "임재남":"Security", "이정우":"Researcher", "배상호":"Strategist", "박희성":"Logistics", "admin":"GM" };
+            myRole = roles[myName];
+
+            document.getElementById('loginBox').classList.add('hidden');
+            document.getElementById('waitingBox').classList.remove('hidden');
             if(isAdmin) document.getElementById('adminSkip').classList.remove('hidden');
-            set(ref(db, `game/players/${myId}`), { id: myId, name: myName, ready: false, hp: 100, weapon: "맨주먹", armor: "없음", status: 'alive', inv: ["-","-","-","-"] });
-            onDisconnect(ref(db, `game/players/${myId}`)).remove(); syncGame();
+
+            set(ref(db, `game/players/${myId}`), { id: myId, name: myName, role: myRole, ready: false, stress: 0, budget: 0, progress: 0, status: 'online', inv: ["-","-","-","-"] });
+            onDisconnect(ref(db, `game/players/${myId}`)).remove();
+            syncGame();
         };
 
         function syncGame() {
             onValue(ref(db, 'game'), (snap) => {
-                const data = snap.val() || {}; 
-                worldData = data.world || { state: 'waiting', timer: 60, closed_zones: {} };
+                const data = snap.val() || {};
+                worldData = data.world || { state: 'waiting', occupied: {} };
                 const players = data.players || {};
                 const me = players[myId];
                 const pArray = Object.values(players);
-                const aliveOnes = pArray.filter(p => p.status === 'alive');
                 
-                document.getElementById('playerList').innerHTML = pArray.map(p => `<div class="flex justify-between text-[11px] uppercase"><span>${p.name}</span><span class="${p.ready?'text-emerald-500':'text-slate-700'}">${p.ready?'[준비완료]':'[대기중]'}</span></div>`).join('');
+                document.getElementById('playerList').innerHTML = pArray.map(p => `<div class="flex justify-between uppercase text-[11px]"><span>${p.name} (${p.role})</span><span class="${p.ready?'text-emerald-500':'text-slate-700'}">${p.ready?'[ONLINE]':'[WAIT]'}</span></div>`).join('');
+                
                 if(me) {
-                    // [중요] DB 데이터를 화면에 강제로 주입
-                    document.getElementById('hpDisp').innerText = me.status === 'dead' ? "0" : me.hp;
-                    document.getElementById('wpDisp').innerText = me.weapon;
-                    document.getElementById('arDisp').innerText = me.armor;
+                    document.getElementById('budDisp').innerText = me.budget.toLocaleString() + "원";
+                    document.getElementById('strDisp').innerText = me.stress + "%";
+                    document.getElementById('progDisp').innerText = me.progress + "%";
                     if(me.inv) me.inv.forEach((item, i) => { const el = document.getElementById(`inv${i+1}`); if(el) el.innerText = item; });
-                    if(me.status === 'dead' && !isDead) { isDead=true; document.getElementById('deathNotice').classList.remove('hidden'); }
+                    if(me.progress >= 100 && !isWon) { isWon = true; document.getElementById('victoryScreen').classList.remove('hidden'); }
                 }
-                document.getElementById('timerDisp').innerText = (worldData.timer || 0) + "s";
-                document.getElementById('farmBtn').innerText = `🔍 파밍(${farmCount}/2)`;
+                document.getElementById('survDisp').innerText = pArray.length;
 
                 if(worldData.state === 'playing') {
                     document.getElementById('lobbyScreen').classList.add('hidden');
@@ -148,95 +171,101 @@
 
                 if(data.world && data.world.lastEvent && data.world.lastEvent.id !== lastEventId) {
                     const ev = data.world.lastEvent; lastEventId = ev.id;
-                    addLog(`[월드] ${ev.msg}`, ev.type === 'death' ? 'text-rose-500 font-bold' : 'text-amber-400 font-black');
-                }
-
-                if(worldData.state === 'playing' && !isDead && myPos && aliveOnes.length === 1 && aliveOnes[0].id === myId && localTime > 15) {
-                    if(!isWon && (pArray.some(p => p.status === 'dead') || Object.keys(worldData.closed_zones || {}).length > 10)) {
-                        isWon = true; document.getElementById('victoryScreen').classList.remove('hidden');
-                    }
+                    addLog(`[알림] ${ev.msg}`, ev.type === 'alert' ? 'text-rose-400 font-bold' : 'text-indigo-300');
                 }
             });
         }
 
         window.toggleReady = () => {
             if(isAdmin) {
-                update(ref(db, 'game/world'), { state: 'playing', timer: 60, closed_zones: {start:true}, lastEvent: {id: Date.now(), msg: '전투가 시작되었습니다!'} });
+                update(ref(db, 'game/world'), { state: 'playing', occupied: {init:true}, lastEvent: {id: Date.now(), msg: '심야 연구동 가동이 시작되었습니다.'} });
                 update(ref(db, `game/players/${myId}`), { ready: true });
             } else {
                 update(ref(db, `game/players/${myId}`), { ready: true });
             }
         };
 
-        window.adminSkip = () => { if(isAdmin) triggerClosing(); };
-
-        function triggerClosing() {
-            const allSectors = []; for(let i=0; i<5; i++) for(let j=0; j<5; j++) allSectors.push(String.fromCharCode(65+i)+(j+1));
-            const cz = worldData.closed_zones || {};
-            const available = allSectors.filter(s => !cz[s]);
-            if(available.length <= 1) return;
-            const chosen = []; for(let i=0; i<2; i++) { if(available.length>0) chosen.push(available.splice(Math.floor(Math.random()*available.length), 1)[0]); }
-            const upd = {}; chosen.forEach(z => upd[z] = true);
-            update(ref(db, 'game/world/closed_zones'), upd);
-            update(ref(db, 'game/world'), { timer: 60, lastEvent: {id: Date.now(), msg: '레드존이 생성되었습니다. 레드존에 있는 플레이어는 해당 지역을 30초 이내로 신속히 이탈하여 주십시오.'} });
-        }
+        window.adminWipe = () => { if(confirm("서버 데이터를 완전히 초기화하시겠습니까?")) remove(ref(db, 'game')).then(() => location.reload()); };
 
         function updateMap() {
             const grid = document.getElementById('mapGrid'); grid.innerHTML = '';
             const mGrid = document.getElementById('moveGrid'); mGrid.innerHTML = '';
-            const cz = worldData.closed_zones || {};
+            const occ = worldData.occupied || {};
             for(let r=0; r<5; r++) { for(let c=0; c<5; c++) {
                 const addrKey = `${String.fromCharCode(65+r)}${c+1}`;
-                const isMe = (myPos && myPos.r===r && myPos.c===c); const isClosed = cz[addrKey];
-                const d = document.createElement('div'); d.className = `sector ${isClosed?'closed':''} ${isMe?'is-me':''}`;
-                d.innerText = `${String.fromCharCode(65+r)}-${c+1}`; grid.appendChild(d);
-                const b = document.createElement('button'); b.className = `sector ${isClosed?'closed opacity-20':'hover:bg-emerald-800'} transition-all`;
-                b.innerText = `${String.fromCharCode(65+r)}-${c+1}`; if(!isClosed && !isDead) b.onclick = () => moveTo(r, c, addrKey); mGrid.appendChild(b);
+                const isMe = (myPos && myPos.r===r && myPos.c===c);
+                const owner = occ[addrKey];
+                
+                const d = document.createElement('div'); 
+                d.className = `sector ${owner?'occupied':''} ${isMe?'is-me':''}`;
+                d.innerHTML = `<span>${String.fromCharCode(65+r)}-${c+1}</span>${owner?`<span class="text-[6px] text-indigo-400 font-normal mt-1">${owner}</span>`:''}`;
+                grid.appendChild(d);
+
+                const b = document.createElement('button'); b.className = `sector hover:bg-indigo-900 transition-all`;
+                b.innerText = `${String.fromCharCode(65+r)}-${c+1}`;
+                b.onclick = () => moveTo(r, c, addrKey); mGrid.appendChild(b);
             } }
-            checkHazard(cz);
         }
 
         window.moveTo = (r, c, ak) => {
-            if(isDead) return; myPos = { r, c }; farmCount = 0;
+            myPos = { r, c }; 
             update(ref(db, `game/players/${myId}`), { pos: myPos });
             document.getElementById('moveModal').classList.add('hidden');
-            addLog(`--- ${String.fromCharCode(65+r)}-${c+1} 이동 완료 ---`, "text-white font-bold py-1 border-y border-slate-800 my-1");
-            if (Math.random() < 0.25) { 
-                const evs = [{m:"유리 조각에 다쳤습니다. (-10 HP)", h:-10}, {m:"넘어져서 피가 납니다. (-5 HP)", h:-5}, {m:"버려진 음료 발견! (+10 HP)", h:10}];
-                const e = evs[Math.floor(Math.random()*evs.length)]; modifyStats(e.h, `[이벤트] ${e.m}`);
-            }
+            addLog(`${String.fromCharCode(65+r)}-${c+1} 연구실로 진입했습니다.`);
+            if (Math.random() < 0.1) modifyStress(10, "[이벤트] 복도에서 상사를 만났습니다! (+10 스트레스)");
             updateMap();
         };
 
-        window.farmItem = () => {
-            if(isDead || farmCount >= 2) return; farmCount++; addLog(`수색 중... (${farmCount}/2)`, "text-amber-500 animate-pulse");
-            setTimeout(() => {
-                const rnd = Math.random();
-                if(rnd < 0.4) addLog("아무것도 찾지 못했습니다.");
-                else if(rnd < 0.65) { modifyStats(15, "붕대를 발견했습니다! (+15 HP)"); updateInv("붕대"); }
-                else {
-                    const ws = ["리볼버", "소방 도끼", "쇠파이프"]; const as = ["경찰 조끼", "군용 조끼"];
-                    if(Math.random() > 0.5) {
-                        const item = ws[Math.floor(Math.random()*ws.length)];
-                        update(ref(db, `game/players/${myId}`), { weapon: item });
-                        addLog(`[${item}] 획득! 무기 슬롯에 장착합니다.`, "text-sky-400 font-bold");
-                    } else {
-                        const item = as[Math.floor(Math.random()*as.length)];
-                        update(ref(db, `game/players/${myId}`), { armor: item });
-                        addLog(`[${item}] 획득! 방어구 슬롯에 장착합니다.`, "text-blue-400 font-bold");
-                    }
-                }
-            }, 600);
+        window.occupyRoom = () => {
+            if(!myPos) return;
+            const ak = `${String.fromCharCode(65+myPos.r)}${myPos.c+1}`;
+            const updates = {}; updates[ak] = myName;
+            update(ref(db, 'game/world/occupied'), updates);
+            update(ref(db, 'game/world'), { lastEvent: {id: Date.now(), msg: `${myName} 연구원이 ${String.fromCharCode(65+myPos.r)}-${c+1} 구역을 점유했습니다.`} });
+            modifyProgress(5, `[점유] 구역 연구 권한을 획득했습니다. (+5% 진척도)`);
         };
 
-        function modifyStats(h, log) {
+        window.exploreRoom = () => {
+            addLog("구역을 탐색 중입니다...");
+            setTimeout(() => {
+                const rnd = Math.random();
+                if(rnd < 0.5) addLog("특이 사항을 발견하지 못했습니다.");
+                else if(rnd < 0.8) { 
+                    const items = ["에너지드링크", "특허 초안", "커피", "보고서"];
+                    const res = items[Math.floor(Math.random()*items.length)];
+                    updateInv(res);
+                    addLog(`[획득] ${res} 아이템을 찾았습니다!`, "text-amber-400 font-bold");
+                    if(res === "특허 초안") modifyProgress(10, "특허 기술을 확보했습니다! (+10% 진척도)");
+                } else {
+                    modifyBudget(50000, "[발견] 잊혀진 연구 예산 5만원을 확보했습니다!");
+                }
+            }, 800);
+        };
+
+        function modifyStress(val, log) {
             const pRef = ref(db, `game/players/${myId}`);
             onValue(pRef, (s) => {
-                const curHP = s.val().hp || 100;
-                const next = Math.max(0, Math.min(100, curHP + h));
-                update(pRef, { hp: next });
-                if(log) addLog(log, h > 0 ? "text-emerald-400" : "text-rose-400");
-                if(next <= 0) killPlayer();
+                const next = Math.max(0, (s.val().stress || 0) + val);
+                update(pRef, { stress: next });
+                if(log) addLog(log, "text-rose-400 font-bold");
+            }, { onlyOnce: true });
+        }
+
+        function modifyProgress(val, log) {
+            const pRef = ref(db, `game/players/${myId}`);
+            onValue(pRef, (s) => {
+                const next = Math.min(100, (s.val().progress || 0) + val);
+                update(pRef, { progress: next });
+                if(log) addLog(log, "text-indigo-400 font-bold");
+            }, { onlyOnce: true });
+        }
+
+        function modifyBudget(val, log) {
+            const pRef = ref(db, `game/players/${myId}`);
+            onValue(pRef, (s) => {
+                const next = (s.val().budget || 0) + val;
+                update(pRef, { budget: next });
+                if(log) addLog(log, "text-emerald-400 font-bold");
             }, { onlyOnce: true });
         }
 
@@ -249,50 +278,37 @@
             }, { onlyOnce: true });
         }
 
-        function killPlayer() {
-            update(ref(db, `game/players/${myId}`), { hp: 0, status: 'dead' });
-            update(ref(db, 'game/world/lastEvent'), { id: Date.now(), type: 'death', msg: `${myName}님이 소멸했습니다.` });
-        }
-
-        function checkHazard(cz) {
-            if(!myPos || isDead || isAdmin) return;
-            const ak = `${String.fromCharCode(65+myPos.r)}${myPos.c+1}`;
-            if (cz[ak] && !redZoneInterval) {
-                addLog("[위험] 레드존 진입! 30초 내로 탈출하십시오.", "text-rose-500 font-bold underline");
-                redZoneTime = 30;
-                redZoneInterval = setInterval(() => {
-                    redZoneTime--;
-                    if ([20, 10, 5, 4, 3, 2, 1].includes(redZoneTime)) addLog(`[경고] ${redZoneTime}초 후 구역 소멸!`, "text-rose-400 font-bold");
-                    if (redZoneTime <= 0) killPlayer();
-                }, 1000);
-            } else if (!cz[ak] && redZoneInterval) {
-                addLog("[안전] 탈출 성공.", "text-emerald-400");
-                clearInterval(redZoneInterval); redZoneInterval = null;
-            }
-        }
-
         function renderLandingGrid() {
             const grid = document.getElementById('landingGrid'); grid.innerHTML = '';
             for(let r=0; r<5; r++) { for(let c=0; c<5; c++) {
-                const b = document.createElement('button'); b.className = "sector bg-slate-900 text-slate-500 hover:bg-emerald-900 transition-all";
+                const b = document.createElement('button'); b.className = "sector bg-slate-900 text-slate-500 hover:bg-indigo-900 transition-all";
                 b.innerText = `${String.fromCharCode(65+r)}-${c+1}`; b.onclick = () => { myPos = { r, c }; update(ref(db, `game/players/${myId}`), { pos: myPos }); };
                 grid.appendChild(b);
             } }
         }
 
-        function addLog(msg, clr="text-slate-400") { const l = document.getElementById('logWindow'); l.innerHTML += `<p class="${clr} mb-1">> ${msg}</p>`; l.scrollTop = l.scrollHeight; }
-        window.showMove = () => { if(!isDead) document.getElementById('moveModal').classList.toggle('hidden'); };
-        window.showManual = () => {};
+        function addLog(msg, clr="text-slate-400") { 
+            const l = document.getElementById('logWindow'); 
+            const p = document.createElement('p'); p.className = `${clr} mb-1`; p.innerText = `> ${msg}`;
+            l.appendChild(p); l.scrollTop = l.scrollHeight; 
+        }
+        window.showMove = () => document.getElementById('moveModal').classList.toggle('hidden');
 
+        // 초당 예산 자동 누적 (점유 구역당 1,000원)
         setInterval(() => {
-            if(worldData.state === 'playing') {
-                localTime++;
-                if(isAdmin) {
-                    const cur = worldData.timer || 60;
-                    if(cur > 0) update(ref(db, 'game/world'), {timer: cur - 1}); else triggerClosing();
-                }
+            if(worldData.state === 'playing' && myPos) {
+                const occ = worldData.occupied || {};
+                let count = 0;
+                for(let key in occ) { if(occ[key] === myName) count++; }
+                if(count > 0) modifyBudget(count * 1000);
             }
-        }, 1000);
+        }, 3000);
     </script>
 </body>
 </html>
+"""
+
+with open("kimm_occupation_war_v0_01.html", "w", encoding="utf-8") as f:
+    f.write(html_code)
+
+print("kimm_occupation_war_v0_01.html")
