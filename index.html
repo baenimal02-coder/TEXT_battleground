@@ -3,49 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Office Tile War v0.05</title>
+    <title>Office Tile War v0.06</title>
     <style>
-        :root { --bg: #f0f2f5; }
+        :root { --bg: #f0f2f5; --primary: #333; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
-        #app { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; }
+        #app { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; min-width: 350px; }
         
         /* Lobby */
-        .char-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
-        .char-card { padding: 10px; border: 2px solid #eee; border-radius: 10px; cursor: pointer; transition: 0.2s; }
-        .char-card.selected { border-color: #3498db; background: #ebf5ff; }
+        #lobby h2 { margin-top: 0; color: var(--primary); }
+        .input-group { margin: 25px 0; }
+        #username-input { width: 80%; padding: 15px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; outline: none; transition: 0.2s; text-align: center; }
+        #username-input:focus { border-color: var(--primary); }
+        #start-btn { width: 90%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 16px; }
 
         /* Game Board */
         #game-screen { display: none; }
-        .scoreboard { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 20px; font-size: 14px; font-weight: bold; }
-        .score-item { padding: 5px 10px; border-radius: 15px; color: white; }
+        .scoreboard { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 20px; font-size: 13px; font-weight: bold; }
+        .score-item { padding: 6px 12px; border-radius: 20px; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
         
-        .grid { display: grid; grid-template-columns: repeat(10, 35px); grid-template-rows: repeat(10, 35px); gap: 4px; border: 4px solid #333; padding: 4px; background: #333; border-radius: 8px; }
-        .tile { background: white; border-radius: 4px; cursor: pointer; transition: background 0.1s; }
-        .tile:hover { filter: brightness(0.9); }
+        .grid { display: grid; grid-template-columns: repeat(10, 35px); grid-template-rows: repeat(10, 35px); gap: 4px; border: 6px solid #222; padding: 6px; background: #222; border-radius: 12px; margin: 0 auto; width: max-content; }
+        .tile { background: #fff; border-radius: 4px; cursor: pointer; transition: background 0.05s; }
+        .tile:hover { filter: brightness(0.85); }
+        
+        #my-status { margin-top: 15px; font-weight: bold; font-size: 14px; }
     </style>
 </head>
 <body>
 
 <div id="app">
-    <!-- 1. 캐릭터 선택 로비 -->
+    <!-- 1. 로그인 로비 -->
     <div id="lobby">
         <h2>타일 점령전</h2>
-        <p>캐릭터를 선택하고 땅을 넓히세요!</p>
-        <div class="char-grid" id="char-list"></div>
-        <button id="start-btn" style="width:100%; padding:15px; background:#333; color:white; border:none; border-radius:10px; cursor:pointer; font-weight:bold;">게임 입장</button>
+        <p style="color:#666; font-size:14px;">사용하실 이름을 입력하세요.</p>
+        <div class="input-group">
+            <input type="text" id="username-input" placeholder="이름 (예: 홍길동)" autocomplete="off">
+        </div>
+        <button id="start-btn">게임 입장</button>
     </div>
 
     <!-- 2. 게임 화면 -->
     <div id="game-screen">
         <div class="scoreboard" id="scoreboard"></div>
         <div class="grid" id="tile-grid"></div>
-        <p style="margin-top:15px; color:#666; font-size:12px;">타일을 클릭하여 자신의 색으로 점령하세요!</p>
+        <div id="my-status"></div>
     </div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-    import { getDatabase, ref, onValue, set, update } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+    import { getDatabase, ref, onValue, set, get, child } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 
     const firebaseConfig = { 
         apiKey: "AIzaSyBjqzM3ScDSoINSMiCukjFG6z7MBjinI1M", 
@@ -60,72 +66,113 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const chars = [
-        { name: "김정한", color: "#e74c3c" }, { name: "조현우", color: "#3498db" },
-        { name: "이정우", color: "#f1c40f" }, { name: "박희성", color: "#2ecc71" },
-        { name: "임재남", color: "#9b59b6" }, { name: "배상호", color: "#34495e" }
+    // 20개의 명확히 구분되는 고대비 색상 팔레트 팩트
+    const palette = [
+        '#e6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231', 
+        '#911eb4', '#42d4f4', '#f032e6', '#bfef45', '#fabed4', 
+        '#469990', '#dcbeff', '#9A6324', '#fffac8', '#800000', 
+        '#aaffc3', '#808000', '#ffd8b1', '#000075', '#a9a9a9'
     ];
 
-    let myChar = null;
+    let myName = "";
+    let myColor = "";
 
-    // 로비 구성
-    const charListDiv = document.getElementById('char-list');
-    chars.forEach(c => {
-        const card = document.createElement('div');
-        card.className = 'char-card';
-        card.innerHTML = `<div style="width:30px; height:30px; background:${c.color}; margin:0 auto 5px; border-radius:50%;"></div>${c.name}`;
-        card.onclick = () => {
-            document.querySelectorAll('.char-card').forEach(el => el.classList.remove('selected'));
-            card.classList.add('selected');
-            myChar = c;
-        };
-        charListDiv.appendChild(card);
-    });
-
-    // 게임 시작
-    document.getElementById('start-btn').onclick = () => {
-        if(!myChar) return alert("캐릭터를 선택해주세요!");
-        document.getElementById('lobby').style.display = 'none';
-        document.getElementById('game-screen').style.display = 'block';
-        initGrid();
+    // 게임 시작 로직
+    document.getElementById('start-btn').onclick = async () => {
+        const inputName = document.getElementById('username-input').value.trim();
+        if(!inputName) return alert("이름을 입력해주세요.");
+        
+        myName = inputName;
+        const dbRef = ref(db);
+        
+        try {
+            // 1. 이미 등록된 유저인지 확인
+            const userSnap = await get(child(dbRef, `users/${myName}`));
+            if (userSnap.exists()) {
+                myColor = userSnap.val().color;
+            } else {
+                // 2. 신규 유저일 경우 사용 중이지 않은 색상 탐색
+                const allUsersSnap = await get(child(dbRef, `users`));
+                const allUsers = allUsersSnap.val() || {};
+                const usedColors = Object.values(allUsers).map(u => u.color);
+                
+                const availableColors = palette.filter(c => !usedColors.includes(c));
+                // 남은 색상이 없으면 팔레트 내에서 랜덤 부여
+                myColor = availableColors.length > 0 ? 
+                    availableColors[Math.floor(Math.random() * availableColors.length)] : 
+                    palette[Math.floor(Math.random() * palette.length)];
+                
+                await set(ref(db, `users/${myName}`), { color: myColor });
+            }
+            
+            // 3. UI 전환 및 그리드 렌더링
+            document.getElementById('lobby').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'block';
+            document.getElementById('my-status').innerHTML = `내 이름: <span style="color:${myColor};">${myName}</span>`;
+            
+            initGrid();
+        } catch (error) {
+            console.error("데이터베이스 연동 오류:", error);
+            alert("서버 접속에 실패했습니다.");
+        }
     };
 
-    // 그리드 생성 및 클릭 이벤트
+    // 엔터키 지원
+    document.getElementById('username-input').onkeypress = (e) => {
+        if(e.key === 'Enter') document.getElementById('start-btn').click();
+    };
+
+    // 10x10 그리드 타일 생성
     function initGrid() {
         const gridDiv = document.getElementById('tile-grid');
-        for(let i=0; i<100; i++) {
+        gridDiv.innerHTML = "";
+        for(let i = 0; i < 100; i++) {
             const tile = document.createElement('div');
             tile.className = 'tile';
             tile.id = `tile-${i}`;
+            // 클릭 시 서버에 소유자와 색상 덮어쓰기
             tile.onclick = () => {
-                set(ref(db, `tiles/${i}`), { owner: myChar.name, color: myChar.color });
+                set(ref(db, `tiles/${i}`), { owner: myName, color: myColor });
             };
             gridDiv.appendChild(tile);
         }
     }
 
-    // 실시간 동기화 (타일 및 점수)
+    // 타일 및 점수 실시간 동기화 (팩트: 변경사항 발생 시 모든 클라이언트 동시 업데이트)
     onValue(ref(db, 'tiles'), (snap) => {
         const data = snap.val() || {};
         const scores = {};
-        chars.forEach(c => scores[c.name] = 0);
 
-        for(let i=0; i<100; i++) {
+        // 1. 그리드 색상 업데이트 및 점수 계산
+        for(let i = 0; i < 100; i++) {
             const tileEl = document.getElementById(`tile-${i}`);
+            if(!tileEl) continue;
+            
             if(data[i]) {
                 tileEl.style.background = data[i].color;
-                scores[data[i].owner]++;
+                
+                // 스코어 집계
+                const owner = data[i].owner;
+                if(!scores[owner]) {
+                    scores[owner] = { count: 0, color: data[i].color };
+                }
+                scores[owner].count++;
+            } else {
+                tileEl.style.background = "#fff";
             }
         }
 
-        // 스코어보드 업데이트
+        // 2. 점수판 렌더링 (점수 높은 순 정렬)
         const scoreDiv = document.getElementById('scoreboard');
         scoreDiv.innerHTML = "";
-        chars.forEach(c => {
+        
+        const sortedScores = Object.entries(scores).sort((a, b) => b[1].count - a[1].count);
+        
+        sortedScores.forEach(([owner, info]) => {
             const item = document.createElement('div');
             item.className = 'score-item';
-            item.style.background = c.color;
-            item.innerText = `${c.name}: ${scores[c.name]}`;
+            item.style.background = info.color;
+            item.innerText = `${owner}: ${info.count}`;
             scoreDiv.appendChild(item);
         });
     });
