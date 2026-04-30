@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Office Tile War v0.06</title>
+    <title>Office Tile War v0.07</title>
     <style>
         :root { --bg: #f0f2f5; --primary: #333; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
-        #app { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; min-width: 350px; }
+        #app { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; min-width: 400px; }
         
         /* Lobby */
         #lobby h2 { margin-top: 0; color: var(--primary); }
@@ -18,6 +18,11 @@
 
         /* Game Board */
         #game-screen { display: none; }
+        
+        /* 실시간 접속자 UI */
+        #online-users-container { margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 10px; font-size: 13px; border: 1px solid #eee; text-align: left; }
+        .online-user-tag { display: inline-block; padding: 4px 10px; margin: 3px; border-radius: 15px; color: white; font-weight: bold; font-size: 12px; text-shadow: 1px 1px 1px rgba(0,0,0,0.3); }
+
         .scoreboard { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 20px; font-size: 13px; font-weight: bold; }
         .score-item { padding: 6px 12px; border-radius: 20px; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
         
@@ -31,9 +36,8 @@
 <body>
 
 <div id="app">
-    <!-- 1. 로그인 로비 -->
     <div id="lobby">
-        <h2>타일 점령전</h2>
+        <h2>타일 점령전 v0.07</h2>
         <p style="color:#666; font-size:14px;">사용하실 이름을 입력하세요.</p>
         <div class="input-group">
             <input type="text" id="username-input" placeholder="이름 (예: 홍길동)" autocomplete="off">
@@ -41,8 +45,12 @@
         <button id="start-btn">게임 입장</button>
     </div>
 
-    <!-- 2. 게임 화면 -->
     <div id="game-screen">
+        <!-- 실시간 접속자 목록 -->
+        <div id="online-users-container">
+            <strong>🟢 현재 접속자:</strong> <span id="online-users-list"></span>
+        </div>
+
         <div class="scoreboard" id="scoreboard"></div>
         <div class="grid" id="tile-grid"></div>
         <div id="my-status"></div>
@@ -51,7 +59,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-    import { getDatabase, ref, onValue, set, get, child } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+    import { getDatabase, ref, onValue, set, get, child, onDisconnect } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 
     const firebaseConfig = { 
         apiKey: "AIzaSyBjqzM3ScDSoINSMiCukjFG6z7MBjinI1M", 
@@ -66,7 +74,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // 20개의 명확히 구분되는 고대비 색상 팔레트 팩트
     const palette = [
         '#e6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231', 
         '#911eb4', '#42d4f4', '#f032e6', '#bfef45', '#fabed4', 
@@ -77,7 +84,6 @@
     let myName = "";
     let myColor = "";
 
-    // 게임 시작 로직
     document.getElementById('start-btn').onclick = async () => {
         const inputName = document.getElementById('username-input').value.trim();
         if(!inputName) return alert("이름을 입력해주세요.");
@@ -86,18 +92,16 @@
         const dbRef = ref(db);
         
         try {
-            // 1. 이미 등록된 유저인지 확인
+            // 1. 고유 색상 할당 로직
             const userSnap = await get(child(dbRef, `users/${myName}`));
             if (userSnap.exists()) {
                 myColor = userSnap.val().color;
             } else {
-                // 2. 신규 유저일 경우 사용 중이지 않은 색상 탐색
                 const allUsersSnap = await get(child(dbRef, `users`));
                 const allUsers = allUsersSnap.val() || {};
                 const usedColors = Object.values(allUsers).map(u => u.color);
                 
                 const availableColors = palette.filter(c => !usedColors.includes(c));
-                // 남은 색상이 없으면 팔레트 내에서 랜덤 부여
                 myColor = availableColors.length > 0 ? 
                     availableColors[Math.floor(Math.random() * availableColors.length)] : 
                     palette[Math.floor(Math.random() * palette.length)];
@@ -105,7 +109,12 @@
                 await set(ref(db, `users/${myName}`), { color: myColor });
             }
             
-            // 3. UI 전환 및 그리드 렌더링
+            // 2. 실시간 접속 상태(Presence) 등록 및 종료 시 삭제 예약
+            const presenceRef = ref(db, `presence/${myName}`);
+            await set(presenceRef, { color: myColor });
+            onDisconnect(presenceRef).remove();
+            
+            // 3. UI 전환
             document.getElementById('lobby').style.display = 'none';
             document.getElementById('game-screen').style.display = 'block';
             document.getElementById('my-status').innerHTML = `내 이름: <span style="color:${myColor};">${myName}</span>`;
@@ -117,12 +126,10 @@
         }
     };
 
-    // 엔터키 지원
     document.getElementById('username-input').onkeypress = (e) => {
         if(e.key === 'Enter') document.getElementById('start-btn').click();
     };
 
-    // 10x10 그리드 타일 생성
     function initGrid() {
         const gridDiv = document.getElementById('tile-grid');
         gridDiv.innerHTML = "";
@@ -130,7 +137,6 @@
             const tile = document.createElement('div');
             tile.className = 'tile';
             tile.id = `tile-${i}`;
-            // 클릭 시 서버에 소유자와 색상 덮어쓰기
             tile.onclick = () => {
                 set(ref(db, `tiles/${i}`), { owner: myName, color: myColor });
             };
@@ -138,12 +144,26 @@
         }
     }
 
-    // 타일 및 점수 실시간 동기화 (팩트: 변경사항 발생 시 모든 클라이언트 동시 업데이트)
+    // [접속자 목록 동기화]
+    onValue(ref(db, 'presence'), (snap) => {
+        const data = snap.val() || {};
+        const listContainer = document.getElementById('online-users-list');
+        listContainer.innerHTML = "";
+        
+        Object.keys(data).forEach(userName => {
+            const tag = document.createElement('span');
+            tag.className = 'online-user-tag';
+            tag.style.background = data[userName].color;
+            tag.innerText = userName;
+            listContainer.appendChild(tag);
+        });
+    });
+
+    // [타일 및 점수 동기화]
     onValue(ref(db, 'tiles'), (snap) => {
         const data = snap.val() || {};
         const scores = {};
 
-        // 1. 그리드 색상 업데이트 및 점수 계산
         for(let i = 0; i < 100; i++) {
             const tileEl = document.getElementById(`tile-${i}`);
             if(!tileEl) continue;
@@ -151,18 +171,14 @@
             if(data[i]) {
                 tileEl.style.background = data[i].color;
                 
-                // 스코어 집계
                 const owner = data[i].owner;
-                if(!scores[owner]) {
-                    scores[owner] = { count: 0, color: data[i].color };
-                }
+                if(!scores[owner]) scores[owner] = { count: 0, color: data[i].color };
                 scores[owner].count++;
             } else {
                 tileEl.style.background = "#fff";
             }
         }
 
-        // 2. 점수판 렌더링 (점수 높은 순 정렬)
         const scoreDiv = document.getElementById('scoreboard');
         scoreDiv.innerHTML = "";
         
