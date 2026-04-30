@@ -1,314 +1,166 @@
-html_code = """
+# ds_python_interpreter를 사용하여 파일 생성
+import os
+
+html_content = """
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>KIMM: 연구동 점유전 v0.01</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Office Survival v0.01</title>
     <style>
-        body { background-color: #020617; color: #f8fafc; font-family: 'Pretendard', sans-serif; touch-action: manipulation; margin: 0; overflow: hidden; height: 100dvh; }
-        .grid-map { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(5, 1fr); gap: 4px; height: 100%; width: 100%; }
-        .sector { border: 1px solid #1e293b; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; border-radius: 6px; background: #0f172a; color: #475569; position: relative; transition: all 0.3s; }
-        .is-me { border-color: #10b981 !important; color: #fff !important; z-index: 10; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
-        .is-me::after { content: '●'; color: #ef4444; position: absolute; top: 1px; right: 3px; animation: blink 0.8s infinite; font-size: 12px; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-        .occupied { background-color: #1e1b4b !important; border-color: #4338ca !important; color: #818cf8 !important; }
-        .log-window::-webkit-scrollbar { width: 4px; }
-        .log-window::-webkit-scrollbar-thumb { background: #334155; }
-        .hidden { display: none !important; }
-        .modal { position: fixed; inset: 0; background-color: rgba(0,0,0,0.95); z-index: 1000; display: flex; flex-direction: column; padding: 1.5rem; }
-        .slot-box { background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 4px; text-align: center; }
+        :root {
+            --primary-color: #4a90e2;
+            --danger-color: #e74c3c;
+            --bg-color: #f4f7f6;
+        }
+        body { font-family: 'Pretendard', sans-serif; background: var(--bg-color); margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        #app { background: white; width: 400px; height: 600px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; }
+        
+        /* Lobby */
+        #lobby { padding: 20px; text-align: center; display: flex; flex-direction: column; justify-content: center; height: 100%; }
+        select { padding: 10px; margin: 20px 0; border-radius: 5px; border: 1px solid #ddd; font-size: 16px; }
+        button { padding: 12px; background: var(--primary-color); color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:hover { opacity: 0.9; }
+
+        /* Game Room */
+        #game-room { display: none; flex-direction: column; height: 100%; }
+        header { padding: 15px; background: var(--primary-color); color: white; text-align: center; }
+        
+        #game-status { background: #fff3f3; padding: 15px; text-align: center; border-bottom: 1px solid #eee; }
+        #bomb-holder { font-weight: bold; color: var(--danger-color); font-size: 1.2em; }
+        
+        #chat-box { flex: 1; overflow-y: auto; padding: 15px; background: #fafafa; }
+        .message { margin-bottom: 10px; padding: 8px 12px; border-radius: 10px; background: white; border: 1px solid #eee; width: fit-content; max-width: 80%; }
+        .message.mine { background: #dcf8c6; margin-left: auto; border: none; }
+        .msg-sender { font-size: 0.8em; color: #888; margin-bottom: 3px; }
+
+        .input-area { padding: 15px; display: flex; border-top: 1px solid #eee; }
+        #chat-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-right: 5px; }
     </style>
 </head>
-<body class="flex flex-col max-w-lg mx-auto">
+<body>
 
-    <!-- [1] 로그인 로비 (드롭다운 방식) -->
-    <div id="lobbyScreen" class="fixed inset-0 bg-slate-950 z-[2000] flex flex-col items-center justify-center p-8 text-center">
-        <h1 class="text-3xl font-black text-indigo-500 italic mb-2 uppercase tracking-tighter">KIMM</h1>
-        <p class="text-white text-xl font-bold mb-1">연구동 점유전</p>
-        <p class="text-slate-600 font-bold text-[9px] mb-12 tracking-[0.4em] uppercase">v0.01 Super Alpha</p>
+<div id="app">
+    <div id="lobby">
+        <h2>Office Survival</h2>
+        <p>등장인물을 선택하세요</p>
+        <select id="char-select">
+            <option value="김정한">김정한</option>
+            <option value="조현우">조현우</option>
+            <option value="이정우">이정우</option>
+            <option value="박희성">박희성</option>
+            <option value="임재남">임재남</option>
+            <option value="배상호">배상호</option>
+        </select>
+        <button id="entry-btn">게임 시작</button>
+    </div>
+
+    <div id="game-room">
+        <header><span id="user-info"></span></header>
         
-        <div id="loginBox" class="w-full max-w-xs space-y-6">
-            <div class="space-y-2">
-                <label class="text-xs text-slate-500 font-bold uppercase tracking-widest">연구원 선택</label>
-                <select id="charSelect" class="w-full bg-slate-900 border-2 border-slate-800 p-4 rounded-2xl text-white outline-none focus:border-indigo-500 font-bold appearance-none">
-                    <option value="조현우">조현우 (PM)</option>
-                    <option value="김정한">김정한 (Engineer)</option>
-                    <option value="임재남">임재남 (Security)</option>
-                    <option value="이정우">이정우 (Researcher)</option>
-                    <option value="배상호">배상호 (Strategist)</option>
-                    <option value="박희성">박희성 (Logistics)</option>
-                    <option value="admin">관리자 (Admin)</option>
-                </select>
-            </div>
-            <button onclick="joinLobby()" class="w-full bg-indigo-600 py-4 rounded-2xl font-black text-white text-lg shadow-2xl active:scale-95 transition-all">전용 단말기 접속</button>
+        <div id="game-status">
+            <div>💣 현재 폭탄 보유자</div>
+            <div id="bomb-holder">대기 중...</div>
+            <button id="pass-btn" style="margin-top:10px; background:var(--danger-color);">폭탄 넘기기!</button>
         </div>
 
-        <div id="waitingBox" class="w-full max-w-xs space-y-4 hidden text-white">
-            <div id="playerList" class="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 font-bold space-y-2 mb-4 text-left"></div>
-            <button id="readyBtn" onclick="toggleReady()" class="w-full bg-emerald-600 py-4 rounded-2xl font-black text-white text-lg shadow-lg">연구 시작</button>
+        <div id="chat-box"></div>
+
+        <div class="input-area">
+            <input type="text" id="chat-input" placeholder="메시지를 입력하세요...">
+            <button id="send-btn">전송</button>
         </div>
     </div>
+</div>
 
-    <!-- [2] 낙하/배치 선택 -->
-    <div id="landingScreen" class="fixed inset-0 bg-slate-950 z-[1500] flex flex-col p-6 hidden">
-        <h2 class="text-2xl font-black text-indigo-400 mb-2 italic text-center">첫 연구실 배치</h2>
-        <p class="text-center text-[10px] text-slate-500 mb-6 font-bold uppercase">배치될 구역을 선택하십시오.</p>
-        <div class="flex-1 min-h-0 bg-black/40 p-2 rounded-2xl border border-slate-800 shadow-2xl">
-            <div id="landingGrid" class="grid-map text-white"></div>
-        </div>
-    </div>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import { getDatabase, ref, onValue, push, set, onDisconnect } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 
-    <!-- [3] 결과/승리 화면 -->
-    <div id="victoryScreen" class="fixed inset-0 bg-black/95 z-[3000] flex flex-col items-center justify-center p-6 text-center hidden">
-        <p class="text-indigo-500 text-7xl mb-6">📂</p>
-        <h1 class="text-4xl font-black text-white mb-2 italic uppercase">Project Approved!</h1>
-        <div class="bg-indigo-950/40 py-8 px-10 rounded-[3rem] border-2 border-indigo-500/50 shadow-[0_0_50px_rgba(79,70,229,0.2)] text-indigo-300 font-black leading-tight">
-            당신은 프로젝트를 완수하여<br>원장이 되었습니다
-        </div>
-        <button onclick="location.reload()" class="mt-16 text-slate-500 font-bold uppercase underline">Next Project</button>
-    </div>
+    const firebaseConfig = { 
+        apiKey: "AIzaSyBjqzM3ScDSoINSMiCukjFG6z7MBjinI1M", 
+        authDomain: "nextgenband.firebaseapp.com", 
+        databaseURL: "https://nextgenband-default-rtdb.firebaseio.com", 
+        projectId: "nextgenband", 
+        storageBucket: "nextgenband.firebasestorage.app", 
+        messagingSenderId: "251453757830", 
+        appId: "1:251453757830:web:201c7945ef0eba901db407" 
+    };
 
-    <!-- [4] 메인 게임 화면 -->
-    <div id="gameScreen" class="flex flex-col h-screen hidden p-2">
-        <!-- 상단 스탯 (Budget, Stress, Progress) -->
-        <div class="flex-none mb-2 bg-slate-900 p-3 rounded-2xl border border-slate-800 shadow-xl text-white">
-            <div class="grid grid-cols-4 gap-1">
-                <div class="text-center border-r border-slate-800"><p class="text-[6px] text-slate-500 font-bold uppercase">예산</p><p id="budDisp" class="text-[10px] font-black text-emerald-400">0</p></div>
-                <div class="text-center border-r border-slate-800"><p class="text-[6px] text-slate-500 font-bold uppercase">스트레스</p><p id="strDisp" class="text-[10px] font-black text-rose-400">0%</p></div>
-                <div class="text-center border-r border-slate-800"><p class="text-[6px] text-slate-500 font-bold uppercase">진척도</p><p id="progDisp" class="text-[10px] font-black text-indigo-400">0%</p></div>
-                <div class="text-center"><p class="text-[6px] text-slate-500 font-bold uppercase">접속자</p><p id="survDisp" class="text-[10px] font-black text-blue-400">0</p></div>
-            </div>
-        </div>
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-        <div class="flex-1 flex flex-col min-h-0">
-            <!-- 실시간 연구동 맵 -->
-            <div class="basis-[40%] p-1 bg-black/20 rounded-2xl border border-slate-900 overflow-hidden mb-2">
-                <div id="mapGrid" class="grid-map"></div>
-            </div>
+    let myName = "";
+    const charList = ["김정한", "조현우", "이정우", "박희성", "임재남", "배상호"];
 
-            <!-- 인벤토리 & 점유 로그 -->
-            <div class="basis-[60%] flex flex-col bg-black/60 rounded-2xl border border-slate-900 overflow-hidden shadow-inner">
-                <div class="bg-slate-950/80 p-2 border-b border-slate-900 grid grid-cols-4 gap-2">
-                    <div class="slot-box text-[6px] text-slate-600 font-bold">ITEM 1<p id="inv1" class="text-[8px] text-amber-400 mt-1 truncate">-</p></div>
-                    <div class="slot-box text-[6px] text-slate-600 font-bold">ITEM 2<p id="inv2" class="text-[8px] text-amber-400 mt-1 truncate">-</p></div>
-                    <div class="slot-box text-[6px] text-slate-600 font-bold">ITEM 3<p id="inv3" class="text-[8px] text-amber-400 mt-1 truncate">-</p></div>
-                    <div class="slot-box text-[6px] text-slate-600 font-bold">ITEM 4<p id="inv4" class="text-[8px] text-amber-400 mt-1 truncate">-</p></div>
-                </div>
-                <div id="logWindow" class="flex-1 p-4 overflow-y-auto text-[11px] leading-relaxed">
-                    <p class="text-indigo-400 font-bold mb-2 tracking-tighter uppercase border-b border-indigo-900/50 pb-1">[SYSTEM TERMINAL]</p>
-                </div>
-            </div>
-        </div>
+    // 요소 참조
+    const lobby = document.getElementById('lobby');
+    const gameRoom = document.getElementById('game-room');
+    const chatBox = document.getElementById('chat-box');
+    const bombDisplay = document.getElementById('bomb-holder');
 
-        <div id="actionPanel" class="flex-none pb-[env(safe-area-inset-bottom)] mt-2">
-            <button id="adminSkip" onclick="adminWipe()" class="hidden bg-rose-900 w-full py-2 rounded-xl text-[10px] font-black text-white mb-2 uppercase tracking-widest animate-pulse border border-rose-700">Server Hard Reset (GM)</button>
-            <div class="grid grid-cols-3 gap-2">
-                <button onclick="exploreRoom()" id="exploreBtn" class="bg-slate-800 py-5 rounded-2xl font-black text-xs text-white shadow-xl active:bg-slate-700 transition-all">🔍 탐색</button>
-                <button onclick="showMove()" id="moveBtn" class="bg-indigo-600 py-5 rounded-2xl font-black text-xs text-white shadow-xl active:bg-indigo-500 transition-all">🏃 이동</button>
-                <button onclick="occupyRoom()" id="occupyBtn" class="bg-emerald-700 py-5 rounded-2xl font-black text-xs text-white shadow-xl active:bg-emerald-600 transition-all">🚩 점유</button>
-            </div>
-        </div>
-    </div>
+    // 입장 버튼
+    document.getElementById('entry-btn').onclick = () => {
+        myName = document.getElementById('char-select').value;
+        lobby.style.display = 'none';
+        gameRoom.style.display = 'flex';
+        document.getElementById('user-info').innerText = myName + " (접속 중)";
+        
+        // 접속 알림
+        push(ref(db, 'chat'), { sender: "시스템", message: myName + "님이 입장했습니다.", type: "sys" });
+    };
 
-    <div id="moveModal" class="modal hidden"><h2 class="text-center text-white font-black mb-6 uppercase italic border-b border-slate-800 pb-2 text-sm tracking-widest">이동할 연구실 선택</h2><div id="moveGrid" class="grid-map h-[60%] w-full"></div><button onclick="showMove()" class="mt-auto py-5 bg-slate-900 rounded-2xl text-slate-500 font-bold uppercase tracking-widest border border-slate-800 transition-all active:bg-slate-800">닫기</button></div>
+    // 메시지 전송
+    const sendMessage = () => {
+        const input = document.getElementById('chat-input');
+        if(!input.value.trim()) return;
+        push(ref(db, 'chat'), { sender: myName, message: input.value, timestamp: Date.now() });
+        input.value = "";
+    };
+    document.getElementById('send-btn').onclick = sendMessage;
+    document.getElementById('chat-input').onkeypress = (e) => { if(e.key === 'Enter') sendMessage(); };
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-        import { getDatabase, ref, onValue, set, update, onDisconnect, remove } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+    // 폭탄 넘기기
+    document.getElementById('pass-btn').onclick = () => {
+        const targets = charList.filter(n => n !== myName);
+        const next = targets[Math.floor(Math.random() * targets.length)];
+        set(ref(db, 'gameState/bomb'), next);
+    };
 
-        const firebaseConfig = { apiKey: "AIzaSyBjqzM3ScDSoINSMiCukjFG6z7MBjinI1M", authDomain: "nextgenband.firebaseapp.com", databaseURL: "https://nextgenband-default-rtdb.firebaseio.com", projectId: "nextgenband", storageBucket: "nextgenband.firebasestorage.app", messagingSenderId: "251453757830", appId: "1:251453757830:web:201c7945ef0eba901db407" };
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+    // 실시간 데이터 수신 (채팅)
+    onValue(ref(db, 'chat'), (snap) => {
+        chatBox.innerHTML = "";
+        snap.forEach(child => {
+            const data = child.val();
+            const isMine = data.sender === myName;
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${isMine ? 'mine' : ''}`;
+            msgDiv.innerHTML = `<div class="msg-sender">${data.sender}</div><div>${data.message}</div>`;
+            chatBox.appendChild(msgDiv);
+        });
+        chatBox.scrollTop = chatBox.scrollHeight;
+    });
 
-        let myId, myName, myRole, isAdmin, myPos = null;
-        let worldData = { state: 'waiting', occupied: {} };
-        let lastEventId = null, localTime = 0, isWon = false;
-
-        window.joinLobby = () => {
-            const select = document.getElementById('charSelect');
-            myName = select.value;
-            myId = "U_" + Math.random().toString(36).substring(2, 7);
-            isAdmin = (myName === "admin");
-            
-            const roles = { "조현우":"PM", "김정한":"Engineer", "임재남":"Security", "이정우":"Researcher", "배상호":"Strategist", "박희성":"Logistics", "admin":"GM" };
-            myRole = roles[myName];
-
-            document.getElementById('loginBox').classList.add('hidden');
-            document.getElementById('waitingBox').classList.remove('hidden');
-            if(isAdmin) document.getElementById('adminSkip').classList.remove('hidden');
-
-            set(ref(db, `game/players/${myId}`), { id: myId, name: myName, role: myRole, ready: false, stress: 0, budget: 0, progress: 0, status: 'online', inv: ["-","-","-","-"] });
-            onDisconnect(ref(db, `game/players/${myId}`)).remove();
-            syncGame();
-        };
-
-        function syncGame() {
-            onValue(ref(db, 'game'), (snap) => {
-                const data = snap.val() || {};
-                worldData = data.world || { state: 'waiting', occupied: {} };
-                const players = data.players || {};
-                const me = players[myId];
-                const pArray = Object.values(players);
-                
-                document.getElementById('playerList').innerHTML = pArray.map(p => `<div class="flex justify-between uppercase text-[11px]"><span>${p.name} (${p.role})</span><span class="${p.ready?'text-emerald-500':'text-slate-700'}">${p.ready?'[ONLINE]':'[WAIT]'}</span></div>`).join('');
-                
-                if(me) {
-                    document.getElementById('budDisp').innerText = me.budget.toLocaleString() + "원";
-                    document.getElementById('strDisp').innerText = me.stress + "%";
-                    document.getElementById('progDisp').innerText = me.progress + "%";
-                    if(me.inv) me.inv.forEach((item, i) => { const el = document.getElementById(`inv${i+1}`); if(el) el.innerText = item; });
-                    if(me.progress >= 100 && !isWon) { isWon = true; document.getElementById('victoryScreen').classList.remove('hidden'); }
-                }
-                document.getElementById('survDisp').innerText = pArray.length;
-
-                if(worldData.state === 'playing') {
-                    document.getElementById('lobbyScreen').classList.add('hidden');
-                    if(!myPos) { document.getElementById('landingScreen').classList.remove('hidden'); renderLandingGrid(); }
-                    else { document.getElementById('landingScreen').classList.add('hidden'); document.getElementById('gameScreen').classList.remove('hidden'); updateMap(); }
-                }
-
-                if(data.world && data.world.lastEvent && data.world.lastEvent.id !== lastEventId) {
-                    const ev = data.world.lastEvent; lastEventId = ev.id;
-                    addLog(`[알림] ${ev.msg}`, ev.type === 'alert' ? 'text-rose-400 font-bold' : 'text-indigo-300');
-                }
-            });
+    // 실시간 데이터 수신 (폭탄)
+    onValue(ref(db, 'gameState/bomb'), (snap) => {
+        const holder = snap.val() || "없음";
+        bombDisplay.innerText = holder;
+        if(holder === myName) {
+            bombDisplay.style.fontSize = "2em";
+            alert("⚠️ 당신이 폭탄을 가졌습니다!");
+        } else {
+            bombDisplay.style.fontSize = "1.2em";
         }
+    });
 
-        window.toggleReady = () => {
-            if(isAdmin) {
-                update(ref(db, 'game/world'), { state: 'playing', occupied: {init:true}, lastEvent: {id: Date.now(), msg: '심야 연구동 가동이 시작되었습니다.'} });
-                update(ref(db, `game/players/${myId}`), { ready: true });
-            } else {
-                update(ref(db, `game/players/${myId}`), { ready: true });
-            }
-        };
-
-        window.adminWipe = () => { if(confirm("서버 데이터를 완전히 초기화하시겠습니까?")) remove(ref(db, 'game')).then(() => location.reload()); };
-
-        function updateMap() {
-            const grid = document.getElementById('mapGrid'); grid.innerHTML = '';
-            const mGrid = document.getElementById('moveGrid'); mGrid.innerHTML = '';
-            const occ = worldData.occupied || {};
-            for(let r=0; r<5; r++) { for(let c=0; c<5; c++) {
-                const addrKey = `${String.fromCharCode(65+r)}${c+1}`;
-                const isMe = (myPos && myPos.r===r && myPos.c===c);
-                const owner = occ[addrKey];
-                
-                const d = document.createElement('div'); 
-                d.className = `sector ${owner?'occupied':''} ${isMe?'is-me':''}`;
-                d.innerHTML = `<span>${String.fromCharCode(65+r)}-${c+1}</span>${owner?`<span class="text-[6px] text-indigo-400 font-normal mt-1">${owner}</span>`:''}`;
-                grid.appendChild(d);
-
-                const b = document.createElement('button'); b.className = `sector hover:bg-indigo-900 transition-all`;
-                b.innerText = `${String.fromCharCode(65+r)}-${c+1}`;
-                b.onclick = () => moveTo(r, c, addrKey); mGrid.appendChild(b);
-            } }
-        }
-
-        window.moveTo = (r, c, ak) => {
-            myPos = { r, c }; 
-            update(ref(db, `game/players/${myId}`), { pos: myPos });
-            document.getElementById('moveModal').classList.add('hidden');
-            addLog(`${String.fromCharCode(65+r)}-${c+1} 연구실로 진입했습니다.`);
-            if (Math.random() < 0.1) modifyStress(10, "[이벤트] 복도에서 상사를 만났습니다! (+10 스트레스)");
-            updateMap();
-        };
-
-        window.occupyRoom = () => {
-            if(!myPos) return;
-            const ak = `${String.fromCharCode(65+myPos.r)}${myPos.c+1}`;
-            const updates = {}; updates[ak] = myName;
-            update(ref(db, 'game/world/occupied'), updates);
-            update(ref(db, 'game/world'), { lastEvent: {id: Date.now(), msg: `${myName} 연구원이 ${String.fromCharCode(65+myPos.r)}-${c+1} 구역을 점유했습니다.`} });
-            modifyProgress(5, `[점유] 구역 연구 권한을 획득했습니다. (+5% 진척도)`);
-        };
-
-        window.exploreRoom = () => {
-            addLog("구역을 탐색 중입니다...");
-            setTimeout(() => {
-                const rnd = Math.random();
-                if(rnd < 0.5) addLog("특이 사항을 발견하지 못했습니다.");
-                else if(rnd < 0.8) { 
-                    const items = ["에너지드링크", "특허 초안", "커피", "보고서"];
-                    const res = items[Math.floor(Math.random()*items.length)];
-                    updateInv(res);
-                    addLog(`[획득] ${res} 아이템을 찾았습니다!`, "text-amber-400 font-bold");
-                    if(res === "특허 초안") modifyProgress(10, "특허 기술을 확보했습니다! (+10% 진척도)");
-                } else {
-                    modifyBudget(50000, "[발견] 잊혀진 연구 예산 5만원을 확보했습니다!");
-                }
-            }, 800);
-        };
-
-        function modifyStress(val, log) {
-            const pRef = ref(db, `game/players/${myId}`);
-            onValue(pRef, (s) => {
-                const next = Math.max(0, (s.val().stress || 0) + val);
-                update(pRef, { stress: next });
-                if(log) addLog(log, "text-rose-400 font-bold");
-            }, { onlyOnce: true });
-        }
-
-        function modifyProgress(val, log) {
-            const pRef = ref(db, `game/players/${myId}`);
-            onValue(pRef, (s) => {
-                const next = Math.min(100, (s.val().progress || 0) + val);
-                update(pRef, { progress: next });
-                if(log) addLog(log, "text-indigo-400 font-bold");
-            }, { onlyOnce: true });
-        }
-
-        function modifyBudget(val, log) {
-            const pRef = ref(db, `game/players/${myId}`);
-            onValue(pRef, (s) => {
-                const next = (s.val().budget || 0) + val;
-                update(pRef, { budget: next });
-                if(log) addLog(log, "text-emerald-400 font-bold");
-            }, { onlyOnce: true });
-        }
-
-        function updateInv(item) {
-            const pRef = ref(db, `game/players/${myId}`);
-            onValue(pRef, (s) => {
-                let inv = s.val().inv || ["-","-","-","-"];
-                const empty = inv.indexOf("-");
-                if(empty !== -1) { inv[empty] = item; update(pRef, { inv: inv }); }
-            }, { onlyOnce: true });
-        }
-
-        function renderLandingGrid() {
-            const grid = document.getElementById('landingGrid'); grid.innerHTML = '';
-            for(let r=0; r<5; r++) { for(let c=0; c<5; c++) {
-                const b = document.createElement('button'); b.className = "sector bg-slate-900 text-slate-500 hover:bg-indigo-900 transition-all";
-                b.innerText = `${String.fromCharCode(65+r)}-${c+1}`; b.onclick = () => { myPos = { r, c }; update(ref(db, `game/players/${myId}`), { pos: myPos }); };
-                grid.appendChild(b);
-            } }
-        }
-
-        function addLog(msg, clr="text-slate-400") { 
-            const l = document.getElementById('logWindow'); 
-            const p = document.createElement('p'); p.className = `${clr} mb-1`; p.innerText = `> ${msg}`;
-            l.appendChild(p); l.scrollTop = l.scrollHeight; 
-        }
-        window.showMove = () => document.getElementById('moveModal').classList.toggle('hidden');
-
-        // 초당 예산 자동 누적 (점유 구역당 1,000원)
-        setInterval(() => {
-            if(worldData.state === 'playing' && myPos) {
-                const occ = worldData.occupied || {};
-                let count = 0;
-                for(let key in occ) { if(occ[key] === myName) count++; }
-                if(count > 0) modifyBudget(count * 1000);
-            }
-        }, 3000);
-    </script>
+</script>
 </body>
 </html>
 """
 
-with open("kimm_occupation_war_v0_01.html", "w", encoding="utf-8") as f:
-    f.write(html_code)
+with open("index.html", "w", encoding="utf-8") as f:
+    f.write(html_content)
 
-print("kimm_occupation_war_v0_01.html")
+print("index.html 파일이 생성되었습니다. 브라우저에서 열어보세요.")
+"""
